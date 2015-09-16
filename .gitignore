@@ -1,0 +1,6 @@
+/env/
+/cache/
+*.pyc
+/output/
+*.pid
+*.swp
