@@ -1,6 +1,8 @@
 Title: Practical, declarative authentication with Angular.JS and ui-router
-Date: 2015-04-10
+Date: 2015-05-10
 Category: Web Frontend Angular
+Slug: pratical-authentication-angularjs-uirouter
+Summary: I describe my favorite Angular.JS authentication pattern which is both simple and flexible, thanks to ui-router's built-in functionality. Say goodbye to boilerplate code in the controllers!
 
 Authentication is one of the core elements of a Single Page Application, but this doesn't mean that all Angular sites implement it correctly. I've seen many examples of overly convoluted solutions that don't take advantage of the capabilities of `ui-router`. In this piece, I'll show how to use the `resolve`s and parent states to set up authentication requirements in a declarative way.
 

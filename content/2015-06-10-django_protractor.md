@@ -1,6 +1,8 @@
 Title: Continous integration with Django and Protractor
 Date: 2015-06-10
 Category: Web Backend Django
+Slug: continous-integration-django-protractor
+Summary: Front end testing often requires specific database fixtures that are difficult to fit in the testing process. We take a look at a solution for Django and Angular.JS/Protractor that can also be used on CircleCI or similar platforms.
 
 Continous integration is a catchy term to refer to the software engineering practice of frequently committing to the `master` branch and running automated tests. Failing builds are tagged so that developers can (in theory) immediately drop everything they are doing to fix them.
 
