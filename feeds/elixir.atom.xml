@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Nicolò Valigi</title><link href="/" rel="alternate"></link><link href="/feeds/elixir.atom.xml" rel="self"></link><id>/</id><updated>2016-05-31T00:00:00+02:00</updated><entry><title>Phoenix WebSockets from the ground up</title><link href="/phoenix-websockets-ground-up.html" rel="alternate"></link><published>2016-05-31T00:00:00+02:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2016-05-31:phoenix-websockets-ground-up.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;p&gt;Inspired by the &lt;a href="http://youtube.com/watch?v=IDKCSheBc-8"&gt;Phoenix is not your
+application&lt;/a&gt; presentation, I dug into
+Phoenix's internals to investigate how to use a custom WebSockets protocol
+while retaining the well-thought abstractions and patterns.  I'm especially
+referring to Phoenix's solid pubsub backends, integration with the Cowboy HTTP
+server, and configuration/logging handling.&lt;/p&gt;
+&lt;p&gt;I was surprised to see that the code involved is very small and readable, with
+the exception of some magic patterns to shuffle between various shapes of
+return values, GenServer state changes, and the like. On the bright side, such
+code would have been hair-pulling to implement in a language without pattern
+matching.&lt;/p&gt;
+&lt;p&gt;What follows is a log of my journey through the code base, and all the moving
+pieces that come together for Phoenix's awesome WebSockets support.&lt;/p&gt;
+&lt;h2&gt;Configuration&lt;/h2&gt;
+&lt;p&gt;First, we take a &lt;em&gt;top down&lt;/em&gt; look at how a Phoenix application is configured to
+handle WebSockets, starting from the user-provided entry point and reaching
+the configuration of the Cowboy HTTP server.&lt;/p&gt;
+&lt;h3&gt;Endpoint (phoenix/endpoint.ex)&lt;/h3&gt;
+&lt;p&gt;Your application's endpoint will use &lt;code&gt;Phoenix.Endpoint&lt;/code&gt; and have one or more calls to
+its &lt;code&gt;socket&lt;/code&gt; macro to set up the URLs that will be handling websockets. The &lt;code&gt;socket&lt;/code&gt;
+macro accumulates socket information in the &lt;code&gt;@phoenix_sockets&lt;/code&gt; attribute:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;defmacro socket(path, module) do
+    quote do
+        @phoenix_sockets {unquote(path), unquote(module)}
+    end
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;and the &lt;code&gt;__before_compile__&lt;/code&gt; macro creates a function that returns that
+attribute itself:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;defmacro __before_compile__(env) do
+    sockets = Module.get_attribute(env.module, :phoenix_sockets)
+
+    quote do
+        def __sockets__, do: unquote(sockets)
+    end
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The &lt;code&gt;Endpoint&lt;/code&gt; also starts the &lt;code&gt;Adapter&lt;/code&gt; supervision loop:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;def start_link do
+    Adapter.start_link(@otp_app, __MODULE__)
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Adapter (phoenix/endpoint/adapter.ex)&lt;/h3&gt;
+&lt;p&gt;The supervisor tree includes a &lt;code&gt;Phoenix.Endpoint.Server&lt;/code&gt; supervisor, that
+we're going to look at next.&lt;/p&gt;
+&lt;h3&gt;Endpoint.Server (phoenix/endpoint/server.ex)&lt;/h3&gt;
+&lt;p&gt;Calls back to the &lt;code&gt;CowboyHandler&lt;/code&gt; and starts supervising the &lt;code&gt;child_spec&lt;/code&gt; it returns.&lt;/p&gt;
+&lt;h3&gt;Endpoint.CowboyHandler&lt;/h3&gt;
+&lt;p&gt;The &lt;code&gt;child_spec&lt;/code&gt; function looks at the sockets defined in the &lt;code&gt;Endpoint&lt;/code&gt;. It
+looks up the corresponding transport for each one and passes the bunch to the
+&lt;code&gt;Plug.Adapters.Cowboy&lt;/code&gt; Cowboy adapter.&lt;/p&gt;
+&lt;h2&gt;Communication&lt;/h2&gt;
+&lt;p&gt;This section traces the flow of data arriving as a WebSockets message as it
+bubbles up towards the application logic the developer has implemented. This
+will take a &lt;em&gt;bottom-up&lt;/em&gt; perspective, from the Cowboy handler to the user-
+provided callbacks.&lt;/p&gt;
+&lt;h3&gt;Endpoint.CowboyWebSocket&lt;/h3&gt;
+&lt;p&gt;When incoming messages arrive on the wire, Cowboy calls the appropriate functions on the
+&lt;code&gt;CowboyWebSocket&lt;/code&gt; module. In turn, these pass the payload up to the
+corresponding function in the &lt;code&gt;Transports.WebSocket&lt;/code&gt; module, such as:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;def websocket_handle({opcode = :text, payload}, req, {handler, state}) do
+    handle_reply req, handler, handler.ws_handle(opcode, payload, state)
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Transport.WebSocket&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;Transport.WebSocket&lt;/code&gt; implements the &lt;code&gt;Socket.Transport&lt;/code&gt; behaviour and uses many convenience functions defined there to handle connection, disconnection, serialization, and deserialization. In a sense, it acts as a middleman between the socket and the channel, shuffling messages back and forth when appropriate.&lt;/p&gt;
+&lt;p&gt;On &lt;em&gt;connection&lt;/em&gt;, &lt;code&gt;Transports.WebSocket&lt;/code&gt; calls back to the &lt;code&gt;connect&lt;/code&gt; function
+in &lt;code&gt;Socket.Transport&lt;/code&gt;. After setting up a new &lt;code&gt;Socket&lt;/code&gt; struct that will be
+kept as part of the process state, that function calls back the &lt;code&gt;connect&lt;/code&gt;
+function in the user-defined module to handle authentication.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Incoming messages&lt;/em&gt; (&lt;code&gt;ws_handle&lt;/code&gt;), are dispatched to the right channel using the &lt;code&gt;Socket.Transport.dispatch&lt;/code&gt; function, that figures out the right channel by looking at the &lt;code&gt;HashDict&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;def dispatch(%Message{} = msg, channels, socket) do
+    channels
+    |&amp;gt; HashDict.get(msg.topic)
+    |&amp;gt; do_dispatch(msg, socket)
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;and then actually sends the payload to the &lt;code&gt;Channel&lt;/code&gt; process:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;defp do_dispatch(channel_pid, msg, _socket) do
+    send(channel_pid, msg)
+    :noreply
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Especially interesting is the &lt;code&gt;dispatch&lt;/code&gt; function that handles new topic topic
+subscriptions, with signature:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;defp do_dispatch(nil, %{event: "phx_join", topic: topic} = msg, socket) do
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;that checks whether the user has defined a channel corresponding to the
+current topic,&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;if channel = socket.handler.__channel__(topic, socket.transport_name) do
+    socket = %Socket{socket | topic: topic, channel: channel}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;has the &lt;code&gt;Socket&lt;/code&gt; &lt;code&gt;join&lt;/code&gt; it,&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;Phoenix.Channel.Server.join(socket, msg.payload)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;and replies positively to the client:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;{:joined, pid, %Reply{ref: msg.ref, topic: topic, status: :ok, payload: response}}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Channel.Server&lt;/h3&gt;
+&lt;p&gt;As the &lt;code&gt;Channel&lt;/code&gt; module itself is only a behaviour that user code needs to
+adhere to, most of the actual functionality is implemented in the Genserver at
+&lt;code&gt;Channel.Server&lt;/code&gt;. Each new socket connection causes a new &lt;code&gt;Channel.Server&lt;/code&gt; to
+be spun up. Precisely, it's the transport that calls the &lt;code&gt;join&lt;/code&gt; function in
+the &lt;code&gt;Channel.Server&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;def join(socket, auth_payload) do
+    ref = make_ref()
+    case GenServer.start_link(__MODULE__, {socket, auth_payload, self(), ref}) do
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;in the &lt;code&gt;init&lt;/code&gt; GenServer callback, the channel asks the &lt;code&gt;Pubsub.Server&lt;/code&gt; to
+subscribe to its topic:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;PubSub.subscribe(socket.pubsub_server, self(), socket.topic,
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;and then messages itself back the result of the subscription, so that it can
+handle messages.&lt;/p&gt;
+&lt;p&gt;Broadcasts are sent through the pubsub server:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;def broadcast(pubsub_server, topic, event, payload) do
+    PubSub.broadcast pubsub_server, topic, %Broadcast{
+      topic: topic,
+      event: event,
+      payload: payload
+    }
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Finally, messages received from the pubsub server are handled by the user's
+application logic implemented in the channel's &lt;code&gt;handle_in&lt;/code&gt; function:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;def handle_info(%Message{topic: topic, event: event, payload: payload, ref: ref},
+                %{topic: topic} = socket) do
+    event
+    |&amp;gt; socket.channel.handle_in(payload, put_in(socket.ref, ref))
+    |&amp;gt; handle_result(:handle_in)
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Conclusions&lt;/h2&gt;
+&lt;p&gt;While well thought-out, the internals are pretty tightly coupled to the topic-
+based nature of Phoenix's WS protocol. Transports, channels, and the pubsub
+server all operate by switching messages based on their topic. While flexibile
+enough for most clean-slate real time applications, this choice makes it
+somewhat hard to retro-fit an existing protocol without overhauling
+significant parts of the stack.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry></feed>

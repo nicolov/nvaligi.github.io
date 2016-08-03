@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- ## for client-side less
+  <link rel="stylesheet/less" type="text/css" href="/theme/css/style.less">
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
+  -->
+  <link rel="stylesheet" type="text/css" href="/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="/theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Nicolò Valigi">
+  <meta name="description" content="Posts and writings by Nicolò Valigi">
+
+  <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Nicolò Valigi Atom" />
+
+<meta name="keywords" content="">
+
+  <title>
+Robotics for developers: architecting SLAM with ROS    Nicolò Valigi
+  </title>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-67820015-1', 'auto');
+  ga('send', 'pageview');
+
+</script></head>
+
+<body>
+  <aside>
+    <div id="user_meta">
+      <a href="">
+        <img src="/blog/images/logo_white.jpg" alt="logo">
+      </a>
+      <h2><a href="">Nicolò Valigi</a></h2>
+      <p>Chronicles of (constant) learning.</p>
+      <ul class="links">
+        <li><a href="/pages/tutorial-on-robotics-for-developers.html">Tutorial on robotics for developers</a></li>
+      </ul>
+
+      <ul style="padding-left: 0;
+                 margin-left: -5px;
+                 list-style: none;
+                 text-align: center;">
+        <li>
+            <a href="https://github.com/nicolov">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+        <li>
+            <a href="mailto:nicolo.valigi@gmail.com">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-envelope fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+    </ul>
+
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <p>
+      <a href="">Index</a> &brvbar; <a href="/archives.html">Archives</a>
+      &brvbar; <a href="/feeds/all.atom.xml">Atom</a>
+      </p>
+    </header>
+
+<article>
+  <div class="article_title">
+    <h1><a href="/robotics-for-developers/architecture-with-ros.html">Robotics for developers: architecting SLAM with ROS</a></h1>
+  </div>
+  <div class="article_text">
+    <html><body><p>In the robotics community, the navigation problem we're building towards is commonly called <strong>SLAM</strong> (Simultaneous Localization and Mapping). SLAM refers to the task of building a map of an unknown environment while simultaneously localizing the robot position within it. In the case of visual-based SLAM, the map is a set of <em>landmarks</em>, recognizable features present on the scene that can be easily tracked as the robot moves.</p>
+<p>SLAM is one of those pesky <em>chicken and egg problems</em>, since robot localization and map building go hand-in-hand: building a map needs an accurate position, but the localization itself needs a map. In the next post, we're going to see how taking a probabilistic approach helps solve this conundrum.<sup id="fnref:slam"><a class="footnote-ref" href="#fn:slam" rel="footnote">1</a></sup></p>
+<p>A complete SLAM system is a pipeline with multiple stages:</p>
+<ul>
+<li>
+<p><strong>Landmark extraction</strong> consists in picking out significant features from the sensor data. In the case of cameras, you can imagine how identifying a black dot on a white wall could be a great feature that would be easy to use as landmark. In practice, this is done with computer vision tools called <em>feature extractors</em> that use local differences in image brightness to find interesting patches within an image.</p>
+</li>
+<li>
+<p><strong>Data association</strong> means establishing correspondences between the same landmark observed in different camera frames, usually corresponding to multiple robot positions.</p>
+</li>
+<li>
+<p><strong>State estimation</strong> combines the current landmark map with so-called <em>odometry</em> information from the robotic platform (for example wheel rotation for a ground robot) to update the estimate of <em>both</em> the map <em>and</em> the robot position. In the next few sections we'll see how this follows a fundamentally probabilistic approach.</p>
+</li>
+</ul>
+<p>While a general SLAM system is a rather complicated affair that must be tailored its application, our project will take a few shortcuts to make the core ideas clearer.</p>
+<p>For starters, the extraction and association steps can be simplified by using man-made landmarks that can be tracked and identified easily and reliably. We're going to use <strong>fiducial markers</strong>, similar to the QR codes using for data sharing<sup id="fnref:fiducial_slam"><a class="footnote-ref" href="#fn:fiducial_slam" rel="footnote">2</a></sup>. The image below has an example of fiducial markers being used for robotics by Alphabet's Boston Dynamics:</p>
+<p><img alt="" src="/robotics-for-developers/boston_dynamics.jpg"/></p>
+<p>Their particular geometric shape takes care of the <em>extraction</em> problem (as it's easy to spot a black square with white borders in a natural scene), while the bits codified within the inner pattern make <em>landmark association</em> trivial.<sup id="fnref:fiducials"><a class="footnote-ref" href="#fn:fiducials" rel="footnote">3</a></sup></p>
+<p>Thanks to the error correction built into the fiducial marker library, we can assume that extraction and association are 100% reliable. However, there's always going to be numerical errors in the exact position of the marker within the camera frame.</p>
+<p>More generally, none of the sensor available for a robot could ever be perfect.
+Cameras, lasers, GPS receivers, all suffer from uncertainties to a certain
+degree. However, they still provide useful information that could and does help
+localize the robot. To make sure that these uncertainties are handled
+coherently, we formalize our localization problem in probabilistic terms, using
+a <strong>Bayesian approach</strong>.<sup id="fnref:bayes"><a class="footnote-ref" href="#fn:bayes" rel="footnote">6</a></sup></p>
+<h2>The probabilistic approach</h2>
+<p>Two main factors make Bayesian probability very powerful within robotics:</p>
+<ul>
+<li>
+<p>Any piece of information within the system is associated with a certain degree of <em>belief</em> in his true value, which is formalized as a <strong>probability distribution</strong>. Interpreting measurements as probabilities, rather than fixed values, is the magic sauce that allows for using multiple sources of information (for example, different kinds of sensors) in an optimal way.</p>
+</li>
+<li>
+<p>A powerful rule to <em>update</em> our beliefs over the world once new information is available from sensors. There are many good intuitive explanations of Bayes' rule around, so I won't repeat the core concept here. In the context of localization, Bayes rule allows us to recursively update our <em>prior beliefs</em> over the position of the robot, using the measurement from the camera.</p>
+</li>
+</ul>
+<p>In mathematical terms, we start by defining the <em>state</em> we want to estimate using sensor data. At this step of the project, we only care about the position of the camera and of the single marker. There's a lot of details involved in choosing appropriate representations for these physical quantities, but we'll defer them until they become interesting.</p>
+<p>Now that we have a state and a rule to update it according to sensor
+measurements, we can explicitly frame the localization problem as <strong>Bayesian
+inference</strong>, i.e. finding the <strong>posterior distribution</strong> of the state
+conditioned over all measurements from sensors.</p>
+<p>While this may sound a bit too mathematical, we're going to adopt a great
+software package that makes this kind of reasoning intuitive. I've decided to
+use the GTSAM project from Georgia Tech due to its clean API and powerful
+abstractions. In GTSAM, all the probabilistic information we have about the
+system is encoded in a <strong>factor graph</strong>.<sup id="fnref:fgraph"><a class="footnote-ref" href="#fn:fgraph" rel="footnote">7</a></sup> The figure below represents the factor
+graph for the problem at hand:</p>
+<p><a href="/robotics-for-developers/2_architecture/fgraph_singlemarker.pdf"><img alt="Single marker factor graph" class="img-center" src="/__pdf_previews__/robotics-for-developers/2_architecture/fgraph_singlemarker.pdf.png" style="max-width: 400px"/></a></p>
+<p>The white circles represent the two pieces of the state: one for the marker pose
+and one for the camera's. White circles are connected to black dots that encode
+probabilistic information. We have two here. The one on the bottom represents
+the information obtained from observing the marker in the image, and thus is
+connected to both pieces of the state (since the position of the marker in the
+image depends on both the camera and marker positions in the world).</p>
+<p>The other black dot on the top left is only connected to the marker position. We
+use it to encode our <em>prior knowledge</em> about the marker position in the world.
+Prior knowledge is any information that we feed into the system before
+considering the sensors. In this particular case, it's obvious that a marker
+showing up in an image only tells us its <em>relative</em> position with respect to the
+camera, and could not be used to distinguish if we're sitting in New York or in
+Rome. That's why we add additional information (a <strong>prior factor</strong>) to solve this
+ambiguity.</p>
+<p>To recap:</p>
+<ul>
+<li>white circles are pieces of the <em>state</em>, the set of values we want to find out about the world (in our case the position of the camera and of the marker),</li>
+<li>since this information is unknown to us, we use a probability distribution to model its uncertainty,</li>
+<li>and use measurements from sensors (together with their own probability distributions) to update our estimate of the state,</li>
+<li>measurements are drawn as black dots connected to the pieces of the state they provide information about.</li>
+</ul>
+<p>There's one missing piece to the puzzle: how to use Bayes' rule to merge all
+these probability distributions and reach a consensus about what's the most
+likely value for the state given all the measurements we have received. In
+probability, this is called a <strong>maximum a posteriori</strong> (MAP) estimate. It turns
+out that the factor graph can easily be converted to a <em>non-linear optimization
+problem</em> that can be solved with a variety of techniques from the numerical
+world. Solving for the minimum of this problem will yield the MAP estimate for the state: exactly what we were looking for!</p>
+<p>During this "conversion" step, each factor (black dot) is interpreted as an
+<em>error term</em> and added to the optimization. Obviously, the variables that appear
+in the error term are the pieces of the state the factor is linked to in the
+graph. Luckily, GTSAM takes care of this conversion for us and also has smart
+heuristics to solve complex problems quicker than the dumb approach.</p>
+<h2>Introduction to ROS</h2>
+<p>The most common framework for academic (and some industrial) robotic software development is the <strong>Robot Operating System (ROS)</strong>, an open-source project by the aptly-named Open Source Robotics Foundation (OSRF).</p>
+<p>Just like web or desktop programming, a software framework makes your life easier by:</p>
+<ul>
+<li>offering proven patterns to kick-start new projects and mechanisms for code reuse,</li>
+<li>breeding a community that builds and shares code,</li>
+<li>providing facilities to reduce boilerplate and common headaches (looking at you, CMake)</li>
+</ul>
+<p>In addition, ROS helps you integrate different software components potentially running on different hosts. This is done through a middleware for inter-process communication and serialization of strongly-typed messages (no JSON here..)</p>
+<p>Beyond the plumbing, there's just an incredible amount of high-quality code that's been contributed over the years, ranging from sensor drivers, camera calibration, motion planning and control, to computer vision packages. Thanks to the common tooling and middleware, integrating most of these projects is a simple matter of writing short C++ or Python glue scripts.</p>
+<h2>Architecture</h2>
+<p>The independent unit of computation in ROS is called a <em>node</em>, which is usually mapped to an OS process. Nodes communicate using TCP-based message passing orchestrated by out-of-band negotiations over XML-RPC. In pratice, we won't worry about these details, as they're taken care of by the <em>ROS client library</em>.</p>
+<p>ROS client libraries abstract message-passing by introducing <code>Publisher</code> and <code>Subscriber</code> objects with convenient APIs. Messages are exchanged over a specific <em>topic</em>, such as <code>/camera/image</code>. All these conventions make it easy (and necessary) to decompose the project in a bunch of communicating processes.<sup id="fnref:ros"><a class="footnote-ref" href="#fn:ros" rel="footnote">4</a></sup></p>
+<p>In the case of our project (at least in its initial iteration), the architecture will look like this:</p>
+<p><a href="/robotics-for-developers/2_architecture/architecture.pdf"><img class="img-center" src="/__pdf_previews__/robotics-for-developers/2_architecture/architecture.pdf.png" style="max-width: 500px"/></a></p>
+<p>When following these patterns, it's easy to swap the camera driver or the localization algorithm, and even run them on different machines (it's pretty common to run the drivers on the onboard computer, but use a stationary workhorse for the more intensive tasks). <sup id="fnref:ros_arch"><a class="footnote-ref" href="#fn:ros_arch" rel="footnote">5</a></sup></p>
+<h2>Next steps</h2>
+<p>In the next post, we are finally going to start laying down some code after introducing the computer vision principles behind visual navigation.</p>
+<h3>Notes</h3>
+<div class="footnote">
+<hr/>
+<ol>
+<li id="fn:slam">
+<p>There's plenty of more mathematically-oriented introductions to SLAM. I like <a href="https://people.eecs.berkeley.edu/~pabbeel/cs287-fa09/readings/Durrant-Whyte_Bailey_SLAM-tutorial-I.pdf">this</a>, <a href="http://www.roboticsschool.ethz.ch/sfly-summerschool/programme/5.2-Chli-SLAM.pdf">this</a>, and <a href="https://github.com/correll/Introduction-to-Autonomous-Robots">this</a>. <a class="footnote-backref" href="#fnref:slam" rev="footnote" title="Jump back to footnote 1 in the text">↩</a></p>
+</li>
+<li id="fn:fiducial_slam">
+<p>In the next post, we will use datasets from <a href="https://bitbucket.org/adrlab/rcars/wiki/Home">this project</a> that solves the same problem. The creators of the ArUco fiducial marker library have created <a href="http://www.uco.es/investiga/grupos/ava/node/57">this</a> as an alternative that doesn't use SLAM techniques. <a class="footnote-backref" href="#fnref:fiducial_slam" rev="footnote" title="Jump back to footnote 2 in the text">↩</a></p>
+</li>
+<li id="fn:fiducials">
+<p>There are many implementations of fiducial markers. While the basic shape is mostly the same, there's been a lot of work in making the detection and extraction of data more reliable. We'll be using <a href="https://april.eecs.umich.edu/wiki/AprilTags">this</a> type of marker. <a class="footnote-backref" href="#fnref:fiducials" rev="footnote" title="Jump back to footnote 3 in the text">↩</a></p>
+</li>
+<li id="fn:ros">
+<p>Documentation for ROS is generally very good, especially the parts about the core packages. The core tutorial you want to go through to understand this is <a href="http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber(c%2B%2B)">here</a>. <a class="footnote-backref" href="#fnref:ros" rev="footnote" title="Jump back to footnote 4 in the text">↩</a></p>
+</li>
+<li id="fn:ros_arch">
+<p>Communication between nodes happens through either TCP or UDP, but plugins for serial communication are also available. <a class="footnote-backref" href="#fnref:ros_arch" rev="footnote" title="Jump back to footnote 5 in the text">↩</a></p>
+</li>
+<li id="fn:bayes">
+<p>Most uses of probability in robotics take the Bayesian interpretation, as opposed to the frequentist. <a href="https://www.amazon.com/Probabilistic-Robotics-Intelligent-Autonomous-Agents/dp/0262201623">This book</a> expands the localization subject with constant references to probabilistic concepts. <a class="footnote-backref" href="#fnref:bayes" rev="footnote" title="Jump back to footnote 6 in the text">↩</a></p>
+</li>
+<li id="fn:fgraph">
+<p>A more formal introduction to factor graphs is available in the <a href="https://research.cc.gatech.edu/borg/sites/edu.borg/files/downloads/gtsam.pdf">GTSAM tutorial</a> and its <a href="https://bitbucket.org/gtborg/gtsam/raw/25bf277cde12211d1c553b3fc6e59b3f942c79de/doc/math.pdf">documentation</a>. <a class="footnote-backref" href="#fnref:fgraph" rev="footnote" title="Jump back to footnote 7 in the text">↩</a></p>
+</li>
+</ol>
+</div></body></html>
+  </div>
+  <div class="article_meta">
+    <p>Posted on: Fri 29 July 2016</p>
+    <p>Category: <a href="/category/computer-vision-robotics.html">computer-vision robotics</a>
+    </p>
+  </div>
+
+
+</article>
+
+
+    <div id="ending_message">
+      <p>&copy; Nicolò Valigi. Built using <a href="http://getpelican.com" target="_blank">Pelican</a>. Theme by Giulio Fidente on <a href="https://github.com/gfidente/pelican-svbhack" target="_blank">github</a>. </p>
+    </div>
+  </main>
+</body>
+</html>

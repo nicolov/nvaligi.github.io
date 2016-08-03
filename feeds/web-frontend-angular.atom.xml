@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Nicolò Valigi</title><link href="/" rel="alternate"></link><link href="/feeds/web-frontend-angular.atom.xml" rel="self"></link><id>/</id><updated>2015-05-10T00:00:00+02:00</updated><entry><title>Practical, declarative authentication with Angular.JS and ui-router</title><link href="/pratical-authentication-angularjs-uirouter.html" rel="alternate"></link><published>2015-05-10T00:00:00+02:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2015-05-10:pratical-authentication-angularjs-uirouter.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;p&gt;Authentication is one of the core elements of a Single Page Application, but this doesn't mean that all Angular sites implement it correctly. I've seen many examples of overly convoluted solutions that don't take advantage of the capabilities of &lt;code&gt;ui-router&lt;/code&gt;. In this piece, I'll show how to use the &lt;code&gt;resolve&lt;/code&gt;s and parent states to set up authentication requirements in a declarative way.&lt;/p&gt;
+&lt;h2&gt;Don't do this..&lt;/h2&gt;
+&lt;p&gt;A solution I've seen bandied around is to handle the authentication in the controllers, like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;if (!$rootScope.isAuthenticated) {
+    $state.go('login');
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;While seemingly innoucous, this code causes the page to flicker for a moment while the browser is redirected. Besides, the snippet must be replicated in each controller, violating every DRY tenet known to man.&lt;/p&gt;
+&lt;h2&gt;or this..&lt;/h2&gt;
+&lt;p&gt;A wise man once said that &lt;code&gt;ui-router&lt;/code&gt; nested states are a powerful tool to organize your application's states. You could create a global &lt;em&gt;abstract&lt;/em&gt; state and tag it to highlight the fact that it requires authentication.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;.state('private', {
+  abstract: true,
+  // ...
+  data: {
+    requireLogin: true
+  }
+})
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Then you go on and define all other states as children of &lt;code&gt;private&lt;/code&gt;, so that they inherit the tag:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;.state('private.dashboard', {
+    parent: 'private'
+    // ...
+})
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The missing piece is to intercept all route changes and check if the user is allowed to reach a specific state. If not, the browser is redirected to the login page instead.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$rootScope.$on('$stateChangeStart', function (event, toState) {
+    var requireLogin = toState.data.requireLogin;
+
+    if (requireLogin &amp;amp;&amp;amp; !$rootScope.currentUser) {
+      event.preventDefault();
+      $state.go('login');
+    }
+});
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This second solution is more refined than the first, as the interceptor prevents the controller from loading, thus getting rid of the flicker. It still isn't very elegant though, as the user model must be stored in some global state (here &lt;code&gt;$rootScope&lt;/code&gt;) and I don't really like using interceptors when they're not needed.&lt;/p&gt;
+&lt;h2&gt;This is way better!&lt;/h2&gt;
+&lt;p&gt;We finally come to the more elegant and flexible solution. I suggest using nested states in conjunction with another of &lt;code&gt;ui-router&lt;/code&gt;'s powerful features, &lt;code&gt;resolve&lt;/code&gt;. Using &lt;code&gt;resolve&lt;/code&gt; unifies the authentication check with the server call, and provides a nice injectable for all controllers that need access to the user model.&lt;/p&gt;
+&lt;p&gt;When one or more promises are passed in the &lt;code&gt;resolve&lt;/code&gt; property of a state, &lt;code&gt;ui-router&lt;/code&gt; will wait for (&lt;em&gt;all of&lt;/em&gt;) them to be resolved before carrying out the state change. Luckily for us, we can handle a failing promise and redirect to a the login state directly from the &lt;code&gt;resolve&lt;/code&gt; function, like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;.state('private', {
+    abstract: true,
+    resolve: {
+        profile: function(Profile, $log, $state) {
+            return Profile.me().then(function(me) {
+                return me;
+            }, function() {
+                $state.go('login', {redirect: $state.toState.name});
+            });
+        }
+    }
+})
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We now turn to the implementation of the &lt;code&gt;Profile&lt;/code&gt; service, that contains the methods to authenticate the user and the user model itself. In this example, we expect the server to return an HTTP 401 error when accessing the &lt;code&gt;/profile&lt;/code&gt; endpoint without proper authentication. In this case, the rejection of the promise will be passed along to the &lt;code&gt;resolve&lt;/code&gt; function that will redirect the user to the login page.&lt;/p&gt;
+&lt;p&gt;This is a simple implementation of the factory with &lt;a href="angular-restmod"&gt;https://github.com/platanus/angular-restmod&lt;/a&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;angular
+.module('app')
+.factory('Profile') {
+    return restmod.single('/profile').mix({
+        $extend: {
+            Model: {
+                me: function() {
+                    var Profile = this;
+                    return Profile.$search().$asPromise()
+                }
+            }
+        }
+    });
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;By using this pattern, the controllers of all the children states will have access to the &lt;code&gt;profile&lt;/code&gt; injectable. As expected, the user won't be able to reach them until the server responds without errors to the &lt;code&gt;/profile&lt;/code&gt; REST call.&lt;/p&gt;
+&lt;h2&gt;Conclusions&lt;/h2&gt;
+&lt;p&gt;We have compared three different approaches to architect authentication in Angular. The third approach is cleaner and more strongly declarative thanks to &lt;code&gt;ui-router&lt;/code&gt;'s features.&lt;/p&gt;
+&lt;p&gt;What's been missing in this discussion is a description of how to implement the login view and store the credentials obtained from the server. In the simplest case of cookie-based authentication, the browser would take care of these issues. In the more modern case of token-based auth, however, it's the developer's job to keep track of the tokens and send them to the server with each request.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry></feed>

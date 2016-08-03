@@ -1,0 +1,1113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Nicolò Valigi</title><link href="/" rel="alternate"></link><link href="/feeds/all.atom.xml" rel="self"></link><id>/</id><updated>2016-08-01T00:00:00+02:00</updated><entry><title>Robotics for developers: exploring a bigger world</title><link href="/robotics-for-developers/exploring-bigger-world.html" rel="alternate"></link><published>2016-08-01T00:00:00+02:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2016-08-01:robotics-for-developers/exploring-bigger-world.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;p&gt;In this post, we're going to finally realize the promise of SLAM and incrementally build a map of the environment. Until now, we have been bound to a single marker, so there wasn't much in the way of a map to talk about.&lt;/p&gt;
+&lt;p&gt;It turns out that the SLAM system with a map is great at exploring large environments, since the structure of the factor graph allows for on-line estimation of the relative pose between all markers. Even a single frame with two visible markers allows the optimizer to "learn" their relative pose, so that either can be used for localization. Any special role for the origin marker disappears, as any other marker can be used equally well for localization.&lt;/p&gt;
+&lt;h2&gt;Extending the state and the factor graph&lt;/h2&gt;
+&lt;p&gt;Since the marker detector already identifies each marker using its inner bits, we can trivially extend the state whenever we observe a new marker. While looping over all detected markers, we also make sure to link the &lt;code&gt;MarkerFactor&lt;/code&gt; to the correct marker state. The factor graph ends up looking something like this:&lt;/p&gt;
+&lt;p&gt;&lt;a href="/robotics-for-developers/5_multiple_markers/fgraph_multimarker.pdf"&gt;&lt;img alt="Factor graph with multiple cameras" class="img-center" src="/__pdf_previews__/robotics-for-developers/5_multiple_markers/fgraph_multimarker.pdf.png" style="max-width: 400px"/&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;In the example above, the camera only observes &lt;em&gt;marker 1&lt;/em&gt; in the first frame, but both &lt;em&gt;marker 1&lt;/em&gt; and &lt;em&gt;marker 2&lt;/em&gt; in the second frame. The third and fourth images only see &lt;em&gt;marker 2&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;At this stage, the backend SLAM optimizer could be used for "real" visual SLAM by replacing the fiducial marker frontend with one based on natural image edges and features. In this case, one tricky issue would be handling &lt;strong&gt;outliers&lt;/strong&gt;: mismatched associations between points that create bad edges in the factor graph and can cause the optimizer to fail.&lt;/p&gt;
+&lt;h2&gt;Missing markers&lt;/h2&gt;
+&lt;p&gt;As introduced earlier, the marker map allows the SLAM system to continue to operate when the original marker disappears from the scene, as long as other markers are visible. The figure below plots the estimated camera position and compares the output from the marker detector and the one from the SLAM system. The little bars at the bottom are a reference to see which of the markers are visible.&lt;/p&gt;
+&lt;iframe frameborder="0" height="500" scrolling="no" src="https://plot.ly/~nikoperugia/15.embed" width="600"&gt;&lt;/iframe&gt;
+&lt;p&gt;For the first few seconds, only &lt;em&gt;marker 1&lt;/em&gt; is available, then &lt;em&gt;marker 2&lt;/em&gt; also appears. The interesting part is around second 11.5, where &lt;em&gt;marker 1&lt;/em&gt; exits the frame, but we can keep tracking using &lt;em&gt;marker 2&lt;/em&gt;. The plain detector, on the other hand, expectedly bails out and doesn't output any data.&lt;/p&gt;
+&lt;h2&gt;Map-building performance&lt;/h2&gt;
+&lt;p&gt;Let's have a look at how the optimizer "learns" the map, i.e. the relative poses between the markers. The following plot shows how the estimated relative &lt;span class="math"&gt;\(x\)&lt;/span&gt; position between &lt;em&gt;marker 1&lt;/em&gt; and &lt;em&gt;marker 2&lt;/em&gt; changes over time:&lt;/p&gt;
+&lt;iframe frameborder="0" height="500" scrolling="no" src="https://plot.ly/~nikoperugia/17.embed" width="600"&gt;&lt;/iframe&gt;
+&lt;p&gt;Again, the bars at the bottom help us track when the markers are visible or not. Obviously, there's no data until we observe &lt;em&gt;marker 2&lt;/em&gt; for the first time, around second 10. As more frames are captured, the estimate converges to around &lt;span class="math"&gt;\(0.5cm\)&lt;/span&gt; compared to the initial starting value of &lt;span class="math"&gt;\(1.5cm\)&lt;/span&gt;. The actual value is probably very close to &lt;span class="math"&gt;\(0\)&lt;/span&gt;, since the two markers are glued to the same table.&lt;/p&gt;
+&lt;p&gt;It's easy to explain the few bumps in the plot: during those periods only one of the markers was visible, and very little information was thus available for the optimizer to refine its estimate.&lt;/p&gt;
+&lt;h2&gt;Next steps&lt;/h2&gt;
+&lt;p&gt;The complete SLAM system performs pretty well and quickly converges to a good estimate of the map. Before you get your hopes too high, remember that this is a simplified case using artificial markers. A real life system would use natural features or laser scan points, which are much messier and prone to failure.&lt;/p&gt;
+&lt;p&gt;Before concluding the series, we'll add support for accelerometer data, that will allow the system to operate even &lt;em&gt;without any marker&lt;/em&gt;, even though just for a brief period of time.&lt;/p&gt;
+&lt;script type="text/javascript"&gt;if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width &lt; 768) ? "left" : align;
+        indent = (screen.width &lt; 768) ? "0em" : indent;
+        linebreak = (screen.width &lt; 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    var location_protocol = (false) ? 'https' : document.location.protocol;
+    if (location_protocol !== 'http' &amp;&amp; location_protocol !== 'https') location_protocol = 'https:';
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = location_protocol + '//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+    mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry><entry><title>Robotics for developers: tracking the robot over time</title><link href="/robotics-for-developers/tracking-over-time.html" rel="alternate"></link><published>2016-07-31T00:00:00+02:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2016-07-31:robotics-for-developers/tracking-over-time.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;p&gt;In the previous post, we have set up a probabilistic model to determine the relative position between the onboard camera and an artificial marker placed on the scene. So far, so good. However, this approach considers each frame independently, wihout any notion of continuous motion of the robot.&lt;/p&gt;
+&lt;p&gt;This simplification is actually surprisingly fine in our case, since fiducial markers can easily be tracked frame-by-frame without issues (that's why we picked them in the first place, after all). However, a real life system will use natural features that need to be tracked continously, and thus needs to somehow remember its history. In the next section, we're going to have a look at the two main ways of doing it.&lt;/p&gt;
+&lt;h2&gt;Adding more frames&lt;/h2&gt;
+&lt;p&gt;The most intuitive way to incorporate knowledge of past states in the system is to extend the state each time a new image is captured. The factor graph we had at the end of the last post:&lt;/p&gt;
+&lt;p&gt;&lt;a href="/robotics-for-developers/2_architecture/fgraph_singlemarker.pdf"&gt;&lt;img alt="Single marker factor graph" class="img-center" src="/__pdf_previews__/robotics-for-developers/2_architecture/fgraph_singlemarker.pdf.png" style="max-width: 320px"/&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;after 2 more frames would look like this instead:&lt;/p&gt;
+&lt;p&gt;&lt;a href="/robotics-for-developers/4_time_evolution/fgraph_multicam.pdf"&gt;&lt;img alt="Factor graph with multiple cameras" class="img-center" src="/__pdf_previews__/robotics-for-developers/4_time_evolution/fgraph_multicam.pdf.png" style="max-width: 300px"/&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;The state element for the marker pose doesn't need to be duplicated, since we assume that it stands still. However, we consider that each new frame corresponds to a new camera position and thus duplicate the corresponding state element accordingly.&lt;/p&gt;
+&lt;p&gt;Besides the added camera poses and corresponding marker observations, we had to add a whole new sets on factors (on the right in the graph above). These factors encode the our knowledge that successive camera positions will be rather close to each other (since the robot moves with a relative low velocity). GTSAM offers a &lt;code&gt;BetweenFactor&lt;/code&gt; that can be used to constrain the relative pose between two state element. On a ground robot, we could have used data from the wheel sensors to correlate two camera states. In this case, however, we have no such information and will postulate the camera is standing still. Since this is obviously incorrect, we're going to adopt an appropriate noise model so that the optimizer places little faith in this prediction.&lt;/p&gt;
+&lt;p&gt;In a later post, we're going to replace this rough approximation with information from the accelerometer.&lt;/p&gt;
+&lt;h2&gt;Smoothing vs filtering&lt;/h2&gt;
+&lt;p&gt;It's obvious how this approach doesn't scale well at all. Since the state elements need to form a square matrix, the space complexity immediately jumps to &lt;span class="math"&gt;\(O(N^2)\)&lt;/span&gt;, which is bad enough in itself. What's more, the algorithms needed for actually solving the problem run in &lt;span class="math"&gt;\(O(N^3)\)&lt;/span&gt;, making this naive approach untenable for real applications. Since we're not discarding any information, this &lt;strong&gt;smoothing&lt;/strong&gt; approach is optimal and is proven to recover the MAP estimate as expected.&lt;/p&gt;
+&lt;p&gt;In the following, we're basically going to ignore these computational considerations and go ahead with dumb smoothing. However, it's important to mention a whole different approach: &lt;strong&gt;filtering&lt;/strong&gt;. An example is the well-known &lt;em&gt;Kalman filter&lt;/em&gt;, a much faster algorithm that only keeps around one copy of the camera pose at all times. While in the smoothing case, information is spread out over a bigger graph which is only sparsely connected, filtering results in a very small, densely connected graph. &lt;sup id="fnref:why_filter"&gt;&lt;a class="footnote-ref" href="#fn:why_filter" rel="footnote"&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;The simplifications involved in filtering have consequences in accuracy and stability, as a lot of information is thrown away at each step (at least in the general case). As to why I haven't decided to use a Kalman filter for this series, I personally find filtering less intuitive to understand and more of a black art to tweak.&lt;/p&gt;
+&lt;h2&gt;Implementation&lt;/h2&gt;
+&lt;p&gt;I'll admit straight away that the "improvement" in the current post does nothing but slow down the system as the state grows bigger and bigger frame after frame. In theory, it should also be slightly more robust when handling degenerate geometric conditions, since informations from neighboring frames can be used to constrain the marker position a bitter. I have not observed much difference in practice though. &lt;sup id="fnref:ambiguity"&gt;&lt;a class="footnote-ref" href="#fn:ambiguity" rel="footnote"&gt;2&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;However, these changes to the factor graph structure will be useful when observing multiple markers in the same image. That being said, the only implementation difference is the addition of some book-keeping code:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;we only add the prior belief to the marker position once, at the first frame,&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;since we're constantly adding new pieces to the state, the optimizer needs initial guesses for these new values. The obvious thing to do here is to initialize newly added states with the MAP obtained at the last step.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Running time&lt;/h2&gt;
+&lt;p&gt;As anticipated, the performance is now pathetic, but we can live with that for now knowing that GTSAM also implements more efficient algorithms that can be used with a few lines of code.&lt;sup id="fnref:isam"&gt;&lt;a class="footnote-ref" href="#fn:isam" rel="footnote"&gt;3&lt;/a&gt;&lt;/sup&gt; I've done some equally pathetic benchmarking, but the trend is clear:&lt;/p&gt;
+&lt;div&gt;
+&lt;a href="https://plot.ly/~nikoperugia/13/" style="display: block; text-align: center;" target="_blank" title="Solve time [s] vs Frame number"&gt;&lt;img alt="Solve time [s] vs Frame number" onerror="this.onerror=null;this.src='https://plot.ly/404.png';" src="https://plot.ly/~nikoperugia/13.png" style="max-width: 100%;width: 600px;" width="600"/&gt;&lt;/a&gt;
+&lt;script async="" data-plotly="nikoperugia:13" src="https://plot.ly/embed.js"&gt;&lt;/script&gt;
+&lt;/div&gt;
+&lt;h2&gt;Next steps&lt;/h2&gt;
+&lt;p&gt;Next time, we'll build upon the work done here and introduce support for multiple markers visible in the same frame. This will again involve extensions to the state as we observe new markers, but the additional effect on performance will be limited as the total number of possible markers is low.&lt;/p&gt;
+&lt;h3&gt;Notes&lt;/h3&gt;
+&lt;div class="footnote"&gt;
+&lt;hr/&gt;
+&lt;ol&gt;
+&lt;li id="fn:why_filter"&gt;
+&lt;p&gt;This &lt;a href="https://www.doc.ic.ac.uk/~ajd/Publications/strasdat_etal_ivc2012.pdf"&gt;interesting paper&lt;/a&gt; analyzes this issue and depth and presents the case both for and against filtering. It's a good read, together with this &lt;a href="https://www.doc.ic.ac.uk/~ajd/Publications/strasdat_etal_icra2010.pdf"&gt;related one&lt;/a&gt;. &lt;a class="footnote-backref" href="#fnref:why_filter" rev="footnote" title="Jump back to footnote 1 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id="fn:ambiguity"&gt;
+&lt;p&gt;Under some conditions, pose recovery from fiducial markers can suffer from ambiguities. This problem manifests itself during the optimization problem. Since there is a second minimum point close to the global minimum, the optimizer may snap back and forth between one and the other. &lt;a class="footnote-backref" href="#fnref:ambiguity" rev="footnote" title="Jump back to footnote 2 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id="fn:isam"&gt;
+&lt;p&gt;In the smoothing world, there are two main ways to reduce the computational load of larger maps. One is to exploit the sparsity of the problem matrix and use specific algorithms with time complexity lower than &lt;span class="math"&gt;\(N^3\)&lt;/span&gt;. Instead, GTSAM takes a graph-based approach and identifies which partitions of the factor graph need to be re-evaluated upon each new sensor measurement. &lt;a href="http://frc.ri.cmu.edu/~kaess/pub/Kaess12ijrr.pdf"&gt;iSAM2&lt;/a&gt; has significant computational advantages compared to the naive approach. Little or no modifications are needed to the problem definition to take advantage of this better solver. &lt;a class="footnote-backref" href="#fnref:isam" rev="footnote" title="Jump back to footnote 3 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+&lt;script type="text/javascript"&gt;if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width &lt; 768) ? "left" : align;
+        indent = (screen.width &lt; 768) ? "0em" : indent;
+        linebreak = (screen.width &lt; 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    var location_protocol = (false) ? 'https' : document.location.protocol;
+    if (location_protocol !== 'http' &amp;&amp; location_protocol !== 'https') location_protocol = 'https:';
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = location_protocol + '//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+    mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry><entry><title>Robotics for developers: using the camera</title><link href="/robotics-for-developers/using-the-camera.html" rel="alternate"></link><published>2016-07-30T00:00:00+02:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2016-07-30:robotics-for-developers/using-the-camera.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;p&gt;The previous post showed how to use probability theory and non-linear optimization to integrate different sources of information. But what kind of data does the observation of a fiducial marker actually produce? How can we find out the position of the camera with respect to the marker once we know its size and position within the image? In other words, what's the form of the measurement factor that gets added to the factor graph?&lt;/p&gt;
+&lt;h3&gt;The pinhole model&lt;/h3&gt;
+&lt;p&gt;We're going to use concepts from &lt;em&gt;geometric computer vision&lt;/em&gt; to exploit the relationship between the position of the marker corners in the captured image and in the real world. To do this, we need to introduce a model for the physical behavior of a digital camera. While things can generally get hairy here, it's enough to say that a camera &lt;em&gt;projects&lt;/em&gt; 3D points in the environment to 2D points in the sensor plane. &lt;sup id="fnref:projection"&gt;&lt;a class="footnote-ref" href="#fn:projection" rel="footnote"&gt;1&lt;/a&gt;&lt;/sup&gt; Some basic geometry helps here, as shown in the following image (the dotted frame is the sensor plane):&lt;/p&gt;
+&lt;p&gt;&lt;img class="img-center" src="/robotics-for-developers/pinhole_model.png" style="max-width: 350px"/&gt;&lt;/p&gt;
+&lt;p&gt;The picture represents the relationship between world point &lt;span class="math"&gt;\(P\)&lt;/span&gt; (&lt;code&gt;world_p&lt;/code&gt; 3-vector), and image point &lt;span class="math"&gt;\(p\)&lt;/span&gt;, (&lt;code&gt;image_p&lt;/code&gt; 2-vector). There's a straightforward mathematical relationship between &lt;span class="math"&gt;\(P\)&lt;/span&gt; and &lt;span class="math"&gt;\(p\)&lt;/span&gt;, that can be expressed as: &lt;sup id="fnref:notation"&gt;&lt;a class="footnote-ref" href="#fn:notation" rel="footnote"&gt;2&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;image_p[0] = world_p[0] * f_x / world_p[2] + o_x
+image_p[1] = world_p[1] * f_y / world_p[2] + o_y
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;As you will have noticed, there are three unknown parameters in the equation: &lt;code&gt;f_x&lt;/code&gt;, &lt;code&gt;f_y&lt;/code&gt;, &lt;code&gt;o_x&lt;/code&gt;, &lt;code&gt;o_y&lt;/code&gt;. These numbers are &lt;em&gt;intrinsic&lt;/em&gt; properties of the imaging system (camera + lens combination) and are the same for any point in any frame. They're usually obtained through the process of &lt;em&gt;intrinsic calibration&lt;/em&gt; of the camera, which we're going to happily skip, since it's well-covered online and doesn't require much insight. There's a bit more on this topic, namely introducing corrections for lens imperfections, but it's not very important for a full understanding.&lt;/p&gt;
+&lt;p&gt;In mathematical terms, the pinhole projection equations can be written as:&lt;/p&gt;
+&lt;div class="math"&gt;$$
+\begin{cases}
+x = \frac{X\ f_x}{Z} + o_x \\
+y = \frac{Y\ f_y}{Z} + o_y
+\end{cases}
+$$&lt;/div&gt;
+&lt;h3&gt;Reprojection error&lt;/h3&gt;
+&lt;p&gt;Thanks to the previous two sections, we have all the building blocks needed to write down the &lt;strong&gt;measurement model&lt;/strong&gt; for a single point. Given a measurement (in our case, the position of a corner in a captured image), and the current estimate of the camera position (the &lt;em&gt;state&lt;/em&gt;), the measurement model will tell the optimizer:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;how well the current estimated state agrees with the measurement,&lt;/li&gt;
+&lt;li&gt;the direction in which to "wiggle" the estimated state to improve such agreement &lt;sup id="fnref:jacobian"&gt;&lt;a class="footnote-ref" href="#fn:jacobian" rel="footnote"&gt;3&lt;/a&gt;&lt;/sup&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;To make things simpler, we can assume that the camera is at position &lt;span class="math"&gt;\((0, 0, 0)\)&lt;/span&gt;. Later, we'll see how it's generally more convenient to have one of the markers in this position, and leave the camera floating in space.&lt;/p&gt;
+&lt;p&gt;In any case, given that we know the position of the camera, the situation is just like the projection picture above, and the state will simply be the position of the corner point &lt;em&gt;in the world&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;The pinhole equations, expressed here by the function &lt;code&gt;project&lt;/code&gt;, are all we need to write the measurement model: &lt;sup id="fnref:meas_model"&gt;&lt;a class="footnote-ref" href="#fn:meas_model" rel="footnote"&gt;4&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;error[0] = measured_image_p[0] - project(world_p)[0]
+error[1] = measured_image_p[1] - project(world_p)[1]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The equations above compute the &lt;strong&gt;reprojection error&lt;/strong&gt; for a single point
+correspondence. The array notation emphasizes that the reprojection error is a
+two dimensional vector (one horizontal and one vertical term). Note how the vector dimensions all match: &lt;code&gt;project&lt;/code&gt; takes a 3D points and returns a 2D point, just like &lt;code&gt;measured_image_p&lt;/code&gt; is.&lt;/p&gt;
+&lt;p&gt;In our case, we need to consider multiple points at the same time (at least 4). There's nothing preventing us from extending the &lt;code&gt;error&lt;/code&gt; vector above with additional point correspondences. However, the next section will explain why this is a bad idea.&lt;/p&gt;
+&lt;h3&gt;What about the other corners?&lt;/h3&gt;
+&lt;p&gt;The problem with having a 8-vector error for each marker (4 corners * 2 points per corner) is that each corner would be optimized independently. This is not correct though since the position of each is related to the others (as they're all part of the same rigid object - the marker).&lt;/p&gt;
+&lt;p&gt;The way we solve this is by adopting a better definition of the state. Instead of having the position of &lt;em&gt;points&lt;/em&gt;, we're going to optimize over the &lt;em&gt;marker pose&lt;/em&gt;. Note that I've wrote &lt;em&gt;pose&lt;/em&gt;, not position. Since the marker is a whole object, not just a single point, we need to define its &lt;em&gt;orientation&lt;/em&gt; as well as its position.&lt;/p&gt;
+&lt;p&gt;While the basic concept is straightforward (define a set of rotations to align the marker with some reference, such as a floor tile), rotation representations are a dime a dozen and wildly confusing. Luckily, we're going to take advantage of classes and functions offered by the GTSAM framework to tackle most of this issues. &lt;sup id="fnref:rot_repr"&gt;&lt;a class="footnote-ref" href="#fn:rot_repr" rel="footnote"&gt;5&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;Instead, let's focus on using this new state to write the right reprojection error for a whole marker. We can look at the marker pose as the position of the center point of the marker, together with the orientation of its frame of reference. To compute the position of each of the 4 corner points, we just need to &lt;em&gt;compose&lt;/em&gt; the marker pose with vectors going from the center of the marker (our reference point) to each of them. Luckily, these vectors are easy to compute, since we know the side length of the marker (we just need to pay some attention to the signs and directions). The figure below shows a 2D simplification of the concept:&lt;/p&gt;
+&lt;p&gt;&lt;a href="/robotics-for-developers/3_camera/marker_comp.pdf"&gt;&lt;img class="img-center" src="/__pdf_previews__/robotics-for-developers/3_camera/marker_comp.pdf.png" style="max-width: 300px"/&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;While there's &lt;em&gt;much&lt;/em&gt; more mathematics behind this, we can use the power of software abstraction and ignore most of it. Indeed, most optimization frameworks make it easy to abstract away rotations and translations without caring about the underlying representation.&lt;/p&gt;
+&lt;h2&gt;Leveraging an existing marker detector and datasets&lt;/h2&gt;
+&lt;p&gt;As mentioned in the previous post, we're going to be taking advantage of
+datasets provided by the community instead of setting up our own hardware
+platform. This also means that we're going to have to choose the same marker
+detector they did.&lt;/p&gt;
+&lt;p&gt;For this project, I've picked datasets from the &lt;a href="https://bitbucket.org/adrlab/rcars/overview"&gt;RCARS
+project&lt;/a&gt; by ETH Zurich, since they
+are recorded with a nice stereo camera and include ground truth and
+accelerometer data that will be useful as we progress in the project. For reference, that's how the images look like:&lt;/p&gt;
+&lt;p&gt;&lt;img class="img-center" src="/robotics-for-developers/frame_example.jpg" style="width: 80%"/&gt;&lt;/p&gt;
+&lt;p&gt;Since the marker detector they used doesn't compile on Ubuntu 16.04, I've decided
+to cheat, ran the detection on a different machine, and recorded the results in
+a new file. This also makes for a smaller download, since we won't need the
+images anymore, but just the position of the corners and their ids. &lt;sup id="fnref:rosbag"&gt;&lt;a class="footnote-ref" href="#fn:rosbag" rel="footnote"&gt;6&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;Let's take one of these datasets and examine it with &lt;code&gt;rosbag info&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="plain"&gt;types:       geometry_msgs/TransformStamped [b5764a33bfeb3588febc2682852579b0]
+             rcars_detector/TagArray        [f8c7f4812d2c3fcc55ab560a8de1d680]
+             sensor_msgs/CameraInfo         [c9a58c1b0b154e0e6da7578cb991d214]
+             sensor_msgs/Imu                [6a62c6daae103f4ff57a132d6f95cec2]
+topics:      /cam0/camera_info       1269 msgs    : sensor_msgs/CameraInfo        
+             /imu0                  12690 msgs    : sensor_msgs/Imu               
+             /rcars/detector/tags    1269 msgs    : rcars_detector/TagArray       
+             /vicon/auk/auk          6343 msgs    : geometry_msgs/TransformStamped
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;For now, all the data we need to feed into the optimizer is in the &lt;code&gt;/rcars/detector/tags&lt;/code&gt; and &lt;code&gt;/cam0/camera_info&lt;/code&gt; (that contains the intrinsics parameters as described above).&lt;/p&gt;
+&lt;h2&gt;Putting everything together - code!&lt;/h2&gt;
+&lt;p&gt;What follows is a walk-through of the code I've pushed &lt;a href="https://github.com/nicolov/robotics_for_developers"&gt;here&lt;/a&gt;. We're going to
+gloss over most of the boring sections and focus on the juicy parts, as it's
+easy to pick up the former from examples and ROS tutorials. &lt;sup id="fnref:gtsam_examples"&gt;&lt;a class="footnote-ref" href="#fn:gtsam_examples" rel="footnote"&gt;7&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;To start, we setup containers for the problem structure and the values associated with each element of the state:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="cpp"&gt;gtsam::NonlinearFactorGraph graph;
+gtsam::Values estimate;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Each piece of the state needs a label (&lt;code&gt;gtsam::Symbol&lt;/code&gt;) that will identify it during the optimization problem. We create one for the camera pose and one for the marker pose:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="cpp"&gt;auto s_camera = gtsam::Symbol('C', 0);
+auto s_marker = gtsam::Symbol('M', 0);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The optimization needs to start somewhere, so we pick initial guesses and insert them in the &lt;code&gt;Values&lt;/code&gt; container:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="cpp"&gt;estimate.insert(s_marker, gtsam::Pose3());
+auto cam_guess = gtsam::Pose3(gtsam::Rot3(), gtsam::Point3(0, 0, 0.5));
+estimate.insert(s_camera, cam_guess);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In this example, the initial guess for the camera pose is 0.5 meters away from
+the marker, in the &lt;span class="math"&gt;\(z\)&lt;/span&gt; direction. As with any nonlinear optimization problem,
+the initial guesses should be chosen quite carefully, otherwise the optimizer
+may fail. This has been the subject of many a PhD's theses, so we won't cover
+it here.&lt;/p&gt;
+&lt;p&gt;The next step is picking a reasonable &lt;em&gt;noise model&lt;/em&gt; to encode our degree of trust
+on the measurements. We're going to be using Gaussian distributions here since
+the marker detection is pretty robust and unlikely to produce &lt;strong&gt;outliers&lt;/strong&gt;
+(hopelessly wrong values, as opposed to slightly incorrect measurements due to
+normal errors). Robust handling of outliers is another can of worms which is
+usually taken care of using &lt;em&gt;robust estimators&lt;/em&gt;.&lt;/p&gt;
+&lt;pre&gt;&lt;code class="cpp"&gt;auto pixel_noise = gtsam::noiseModel::Isotropic::shared_ptr(
+    gtsam::noiseModel::Isotropic::Sigma(8, 1));
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The standard deviation of 1 pixel is pretty common in practice. It's now time to create a &lt;strong&gt;prior factor&lt;/strong&gt; to encode our belief that the marker pose is close to the identity. The way this works is that I've decided that I want the marker to be in the origin pose, and thus create the prior accordingly. I could have set this prior anywhere (for example, 5 meters east), with no changes. However, a prior is indeed required otherwise the information in the measurement would not be enough to constrain the camera pose. This is somewhat intuitive, since it's clear that observing an object at a certain distance doesn't tell us where the camera is at all. That's why we need to add this additional belief.&lt;/p&gt;
+&lt;pre&gt;&lt;code class="cpp"&gt;auto origin_noise = gtsam::noiseModel::Isotropic::shared_ptr(
+    gtsam::noiseModel::Isotropic::Sigma(6, 1e-3));
+
+graph.push_back(
+  gtsam::PriorFactor&amp;lt;gtsam::Pose3&amp;gt;(s_marker, gtsam::Pose3(), origin_noise));
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;It's finally time to add the measurement corresponding to the marker observation. We do this with the &lt;code&gt;MarkerFactor&lt;/code&gt; class that embeds the reprojection error calculation:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="cpp"&gt;graph.push_back(
+  MarkerFactor(corners, pixel_noise, s_camera, s_marker, K_, tag_size_));
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This factor is more complicated than the others, since it must be connected to both the marker and the camera poses and also needs the camera calibration (&lt;code&gt;K_&lt;/code&gt;) and the side length of the marker (&lt;code&gt;tag_size_&lt;/code&gt;).&lt;/p&gt;
+&lt;p&gt;Now that the factor graph is set up, we can kick off the optimization and relax:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="cpp"&gt;auto result = gtsam::GaussNewtonOptimizer(graph, estimate).optimize();
+auto opt_camera_pose = result.at&amp;lt;gtsam::Pose3&amp;gt;(s_camera);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The choice of the optimization algorithm has a significant effect on the
+convergence properties, speed and accuracy of the solution. Since the problem
+here is pretty straightforward, a basic textbook choice like Gauss-Newton's is
+fine.&lt;/p&gt;
+&lt;h2&gt;Comparison with OpenCV&lt;/h2&gt;
+&lt;p&gt;Our current approach is definitely overkill for such a simple measurement, and indeed OpenCV provides a built-in function to replace it all. Indeed, the &lt;code&gt;solvePnP&lt;/code&gt; function will solve the 2D-&amp;gt;3D scene reconstruction problem in the exact same way as we did.&lt;/p&gt;
+&lt;p&gt;We compare its results with our solution by plotting one coordinate of the camera position over time:&lt;/p&gt;
+&lt;div&gt;
+&lt;a href="https://plot.ly/~nikoperugia/11/" style="display: block; text-align: center;" target="_blank" title="Camera Z position [m] vs Time [s]"&gt;&lt;img alt="Camera Z position [m] vs Time [s]" onerror="this.onerror=null;this.src='https://plot.ly/404.png';" src="https://plot.ly/~nikoperugia/11.png" style="max-width: 100%;width: 600px;" width="600"/&gt;&lt;/a&gt;
+&lt;script async="" data-plotly="nikoperugia:11" src="https://plot.ly/embed.js"&gt;&lt;/script&gt;
+&lt;/div&gt;
+&lt;p&gt;The numbers are so close that you actually need to hover to see both. You can also see a brief hole in the plot, corresponding to a few moments in which the markers was outside the frame.&lt;/p&gt;
+&lt;h2&gt;Next steps&lt;/h2&gt;
+&lt;p&gt;Now that we've set up the plumbing and checked that our computer vision fundamentals are sound, we can quickly iterate to make the project more useful, starting with tracking the robot as its camera moves over time. This is the subject of the next post in the series.&lt;/p&gt;
+&lt;h3&gt;Notes&lt;/h3&gt;
+&lt;div class="footnote"&gt;
+&lt;hr/&gt;
+&lt;ol&gt;
+&lt;li id="fn:projection"&gt;
+&lt;p&gt;The reference book for this branch of computer vision is &lt;a href="https://www.amazon.com/Multiple-View-Geometry-Computer-Vision/dp/0521540518?ie=UTF8&amp;amp;n=507846&amp;amp;qid=1126195435&amp;amp;redirect=true&amp;amp;ref_=pd_bbs_1&amp;amp;s=books&amp;amp;sr=8-1&amp;amp;v=glance"&gt;Hartley's&lt;/a&gt;. &lt;a class="footnote-backref" href="#fnref:projection" rev="footnote" title="Jump back to footnote 1 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id="fn:notation"&gt;
+&lt;p&gt;I'll try to keep mathematical notation to a minimum throughout, and use some sort of pseudocode instead. Whether it's &lt;em&gt;numpy&lt;/em&gt;, &lt;em&gt;matlab&lt;/em&gt;, or &lt;em&gt;Eigen&lt;/em&gt;, most code written in the real world handles vectors and matrices nicely. Explicit for loop are rarely needed for mathematics. &lt;a class="footnote-backref" href="#fnref:notation" rev="footnote" title="Jump back to footnote 2 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id="fn:jacobian"&gt;
+&lt;p&gt;Mathematically, this information is carried by the &lt;strong&gt;Jacobian matrix&lt;/strong&gt;. GTSAM's reference noted in the previous post has plenty of information about its usage, its calculation, and its hair-pulling properties. Thanks to the &lt;strong&gt;chain rule&lt;/strong&gt;, however, it's easy to build the Jacobian of a complex computation as long as we know how to compute the Jacobian of each of its parts. The concept is similar to &lt;em&gt;backpropagation&lt;/em&gt; is neural networks. &lt;a class="footnote-backref" href="#fnref:jacobian" rev="footnote" title="Jump back to footnote 3 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id="fn:meas_model"&gt;
+&lt;p&gt;The GTSAM tutorial has more in-depth information about writing a custom measurement factor. You should also refer at the code in &lt;code&gt;MarkerFactor.h&lt;/code&gt; to see how I implemented this particular measurement. By chaining together functions (and keeping track of their Jacobian), writing basic factors is usually painless. &lt;a class="footnote-backref" href="#fnref:meas_model" rev="footnote" title="Jump back to footnote 4 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id="fn:rot_repr"&gt;
+&lt;p&gt;The most common representations for rotations are &lt;em&gt;rotation matrices&lt;/em&gt;, &lt;em&gt;Euler angles&lt;/em&gt;, and &lt;em&gt;quaternions&lt;/em&gt;. Each of these has plus and cons depending on the objective and the situation. In addition, GTSAM also uses ideas from Lie algebras for certain kinds of operations (more information &lt;a href="https://bitbucket.org/gtborg/gtsam/raw/25bf277cde12211d1c553b3fc6e59b3f942c79de/doc/LieGroups.pdf"&gt;here&lt;/a&gt;). Another good introduction to optimization in the rotation space is &lt;a href="http://arxiv.org/abs/1107.1119"&gt;here&lt;/a&gt;. &lt;a class="footnote-backref" href="#fnref:rot_repr" rev="footnote" title="Jump back to footnote 5 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id="fn:rosbag"&gt;
+&lt;p&gt;In the ROS world, datasets are usually recorded using the &lt;code&gt;rosbag&lt;/code&gt; tool, which helps researches store data during experiments and play it back to test algorithms. If you want to work with ROS, it's strongly recommended to &lt;a href="http://wiki.ros.org/rosbag/Commandline"&gt;learn its usage&lt;/a&gt;. &lt;a class="footnote-backref" href="#fnref:rosbag" rev="footnote" title="Jump back to footnote 6 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id="fn:gtsam_examples"&gt;
+&lt;p&gt;GTSAM's &lt;em&gt;examples&lt;/em&gt; folder is also a very good source to learn about SLAM in general. &lt;a class="footnote-backref" href="#fnref:gtsam_examples" rev="footnote" title="Jump back to footnote 7 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+&lt;script type="text/javascript"&gt;if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width &lt; 768) ? "left" : align;
+        indent = (screen.width &lt; 768) ? "0em" : indent;
+        linebreak = (screen.width &lt; 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    var location_protocol = (false) ? 'https' : document.location.protocol;
+    if (location_protocol !== 'http' &amp;&amp; location_protocol !== 'https') location_protocol = 'https:';
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = location_protocol + '//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+    mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry><entry><title>Robotics for developers: architecting SLAM with ROS</title><link href="/robotics-for-developers/architecture-with-ros.html" rel="alternate"></link><published>2016-07-29T00:00:00+02:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2016-07-29:robotics-for-developers/architecture-with-ros.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;p&gt;In the robotics community, the navigation problem we're building towards is commonly called &lt;strong&gt;SLAM&lt;/strong&gt; (Simultaneous Localization and Mapping). SLAM refers to the task of building a map of an unknown environment while simultaneously localizing the robot position within it. In the case of visual-based SLAM, the map is a set of &lt;em&gt;landmarks&lt;/em&gt;, recognizable features present on the scene that can be easily tracked as the robot moves.&lt;/p&gt;
+&lt;p&gt;SLAM is one of those pesky &lt;em&gt;chicken and egg problems&lt;/em&gt;, since robot localization and map building go hand-in-hand: building a map needs an accurate position, but the localization itself needs a map. In the next post, we're going to see how taking a probabilistic approach helps solve this conundrum.&lt;sup id="fnref:slam"&gt;&lt;a class="footnote-ref" href="#fn:slam" rel="footnote"&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;A complete SLAM system is a pipeline with multiple stages:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Landmark extraction&lt;/strong&gt; consists in picking out significant features from the sensor data. In the case of cameras, you can imagine how identifying a black dot on a white wall could be a great feature that would be easy to use as landmark. In practice, this is done with computer vision tools called &lt;em&gt;feature extractors&lt;/em&gt; that use local differences in image brightness to find interesting patches within an image.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Data association&lt;/strong&gt; means establishing correspondences between the same landmark observed in different camera frames, usually corresponding to multiple robot positions.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;State estimation&lt;/strong&gt; combines the current landmark map with so-called &lt;em&gt;odometry&lt;/em&gt; information from the robotic platform (for example wheel rotation for a ground robot) to update the estimate of &lt;em&gt;both&lt;/em&gt; the map &lt;em&gt;and&lt;/em&gt; the robot position. In the next few sections we'll see how this follows a fundamentally probabilistic approach.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;While a general SLAM system is a rather complicated affair that must be tailored its application, our project will take a few shortcuts to make the core ideas clearer.&lt;/p&gt;
+&lt;p&gt;For starters, the extraction and association steps can be simplified by using man-made landmarks that can be tracked and identified easily and reliably. We're going to use &lt;strong&gt;fiducial markers&lt;/strong&gt;, similar to the QR codes using for data sharing&lt;sup id="fnref:fiducial_slam"&gt;&lt;a class="footnote-ref" href="#fn:fiducial_slam" rel="footnote"&gt;2&lt;/a&gt;&lt;/sup&gt;. The image below has an example of fiducial markers being used for robotics by Alphabet's Boston Dynamics:&lt;/p&gt;
+&lt;p&gt;&lt;img alt="" src="/robotics-for-developers/boston_dynamics.jpg"/&gt;&lt;/p&gt;
+&lt;p&gt;Their particular geometric shape takes care of the &lt;em&gt;extraction&lt;/em&gt; problem (as it's easy to spot a black square with white borders in a natural scene), while the bits codified within the inner pattern make &lt;em&gt;landmark association&lt;/em&gt; trivial.&lt;sup id="fnref:fiducials"&gt;&lt;a class="footnote-ref" href="#fn:fiducials" rel="footnote"&gt;3&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;Thanks to the error correction built into the fiducial marker library, we can assume that extraction and association are 100% reliable. However, there's always going to be numerical errors in the exact position of the marker within the camera frame.&lt;/p&gt;
+&lt;p&gt;More generally, none of the sensor available for a robot could ever be perfect.
+Cameras, lasers, GPS receivers, all suffer from uncertainties to a certain
+degree. However, they still provide useful information that could and does help
+localize the robot. To make sure that these uncertainties are handled
+coherently, we formalize our localization problem in probabilistic terms, using
+a &lt;strong&gt;Bayesian approach&lt;/strong&gt;.&lt;sup id="fnref:bayes"&gt;&lt;a class="footnote-ref" href="#fn:bayes" rel="footnote"&gt;6&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;h2&gt;The probabilistic approach&lt;/h2&gt;
+&lt;p&gt;Two main factors make Bayesian probability very powerful within robotics:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Any piece of information within the system is associated with a certain degree of &lt;em&gt;belief&lt;/em&gt; in his true value, which is formalized as a &lt;strong&gt;probability distribution&lt;/strong&gt;. Interpreting measurements as probabilities, rather than fixed values, is the magic sauce that allows for using multiple sources of information (for example, different kinds of sensors) in an optimal way.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;A powerful rule to &lt;em&gt;update&lt;/em&gt; our beliefs over the world once new information is available from sensors. There are many good intuitive explanations of Bayes' rule around, so I won't repeat the core concept here. In the context of localization, Bayes rule allows us to recursively update our &lt;em&gt;prior beliefs&lt;/em&gt; over the position of the robot, using the measurement from the camera.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In mathematical terms, we start by defining the &lt;em&gt;state&lt;/em&gt; we want to estimate using sensor data. At this step of the project, we only care about the position of the camera and of the single marker. There's a lot of details involved in choosing appropriate representations for these physical quantities, but we'll defer them until they become interesting.&lt;/p&gt;
+&lt;p&gt;Now that we have a state and a rule to update it according to sensor
+measurements, we can explicitly frame the localization problem as &lt;strong&gt;Bayesian
+inference&lt;/strong&gt;, i.e. finding the &lt;strong&gt;posterior distribution&lt;/strong&gt; of the state
+conditioned over all measurements from sensors.&lt;/p&gt;
+&lt;p&gt;While this may sound a bit too mathematical, we're going to adopt a great
+software package that makes this kind of reasoning intuitive. I've decided to
+use the GTSAM project from Georgia Tech due to its clean API and powerful
+abstractions. In GTSAM, all the probabilistic information we have about the
+system is encoded in a &lt;strong&gt;factor graph&lt;/strong&gt;.&lt;sup id="fnref:fgraph"&gt;&lt;a class="footnote-ref" href="#fn:fgraph" rel="footnote"&gt;7&lt;/a&gt;&lt;/sup&gt; The figure below represents the factor
+graph for the problem at hand:&lt;/p&gt;
+&lt;p&gt;&lt;a href="/robotics-for-developers/2_architecture/fgraph_singlemarker.pdf"&gt;&lt;img alt="Single marker factor graph" class="img-center" src="/__pdf_previews__/robotics-for-developers/2_architecture/fgraph_singlemarker.pdf.png" style="max-width: 400px"/&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;The white circles represent the two pieces of the state: one for the marker pose
+and one for the camera's. White circles are connected to black dots that encode
+probabilistic information. We have two here. The one on the bottom represents
+the information obtained from observing the marker in the image, and thus is
+connected to both pieces of the state (since the position of the marker in the
+image depends on both the camera and marker positions in the world).&lt;/p&gt;
+&lt;p&gt;The other black dot on the top left is only connected to the marker position. We
+use it to encode our &lt;em&gt;prior knowledge&lt;/em&gt; about the marker position in the world.
+Prior knowledge is any information that we feed into the system before
+considering the sensors. In this particular case, it's obvious that a marker
+showing up in an image only tells us its &lt;em&gt;relative&lt;/em&gt; position with respect to the
+camera, and could not be used to distinguish if we're sitting in New York or in
+Rome. That's why we add additional information (a &lt;strong&gt;prior factor&lt;/strong&gt;) to solve this
+ambiguity.&lt;/p&gt;
+&lt;p&gt;To recap:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;white circles are pieces of the &lt;em&gt;state&lt;/em&gt;, the set of values we want to find out about the world (in our case the position of the camera and of the marker),&lt;/li&gt;
+&lt;li&gt;since this information is unknown to us, we use a probability distribution to model its uncertainty,&lt;/li&gt;
+&lt;li&gt;and use measurements from sensors (together with their own probability distributions) to update our estimate of the state,&lt;/li&gt;
+&lt;li&gt;measurements are drawn as black dots connected to the pieces of the state they provide information about.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;There's one missing piece to the puzzle: how to use Bayes' rule to merge all
+these probability distributions and reach a consensus about what's the most
+likely value for the state given all the measurements we have received. In
+probability, this is called a &lt;strong&gt;maximum a posteriori&lt;/strong&gt; (MAP) estimate. It turns
+out that the factor graph can easily be converted to a &lt;em&gt;non-linear optimization
+problem&lt;/em&gt; that can be solved with a variety of techniques from the numerical
+world. Solving for the minimum of this problem will yield the MAP estimate for the state: exactly what we were looking for!&lt;/p&gt;
+&lt;p&gt;During this "conversion" step, each factor (black dot) is interpreted as an
+&lt;em&gt;error term&lt;/em&gt; and added to the optimization. Obviously, the variables that appear
+in the error term are the pieces of the state the factor is linked to in the
+graph. Luckily, GTSAM takes care of this conversion for us and also has smart
+heuristics to solve complex problems quicker than the dumb approach.&lt;/p&gt;
+&lt;h2&gt;Introduction to ROS&lt;/h2&gt;
+&lt;p&gt;The most common framework for academic (and some industrial) robotic software development is the &lt;strong&gt;Robot Operating System (ROS)&lt;/strong&gt;, an open-source project by the aptly-named Open Source Robotics Foundation (OSRF).&lt;/p&gt;
+&lt;p&gt;Just like web or desktop programming, a software framework makes your life easier by:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;offering proven patterns to kick-start new projects and mechanisms for code reuse,&lt;/li&gt;
+&lt;li&gt;breeding a community that builds and shares code,&lt;/li&gt;
+&lt;li&gt;providing facilities to reduce boilerplate and common headaches (looking at you, CMake)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In addition, ROS helps you integrate different software components potentially running on different hosts. This is done through a middleware for inter-process communication and serialization of strongly-typed messages (no JSON here..)&lt;/p&gt;
+&lt;p&gt;Beyond the plumbing, there's just an incredible amount of high-quality code that's been contributed over the years, ranging from sensor drivers, camera calibration, motion planning and control, to computer vision packages. Thanks to the common tooling and middleware, integrating most of these projects is a simple matter of writing short C++ or Python glue scripts.&lt;/p&gt;
+&lt;h2&gt;Architecture&lt;/h2&gt;
+&lt;p&gt;The independent unit of computation in ROS is called a &lt;em&gt;node&lt;/em&gt;, which is usually mapped to an OS process. Nodes communicate using TCP-based message passing orchestrated by out-of-band negotiations over XML-RPC. In pratice, we won't worry about these details, as they're taken care of by the &lt;em&gt;ROS client library&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;ROS client libraries abstract message-passing by introducing &lt;code&gt;Publisher&lt;/code&gt; and &lt;code&gt;Subscriber&lt;/code&gt; objects with convenient APIs. Messages are exchanged over a specific &lt;em&gt;topic&lt;/em&gt;, such as &lt;code&gt;/camera/image&lt;/code&gt;. All these conventions make it easy (and necessary) to decompose the project in a bunch of communicating processes.&lt;sup id="fnref:ros"&gt;&lt;a class="footnote-ref" href="#fn:ros" rel="footnote"&gt;4&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;In the case of our project (at least in its initial iteration), the architecture will look like this:&lt;/p&gt;
+&lt;p&gt;&lt;a href="/robotics-for-developers/2_architecture/architecture.pdf"&gt;&lt;img class="img-center" src="/__pdf_previews__/robotics-for-developers/2_architecture/architecture.pdf.png" style="max-width: 500px"/&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;When following these patterns, it's easy to swap the camera driver or the localization algorithm, and even run them on different machines (it's pretty common to run the drivers on the onboard computer, but use a stationary workhorse for the more intensive tasks). &lt;sup id="fnref:ros_arch"&gt;&lt;a class="footnote-ref" href="#fn:ros_arch" rel="footnote"&gt;5&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;h2&gt;Next steps&lt;/h2&gt;
+&lt;p&gt;In the next post, we are finally going to start laying down some code after introducing the computer vision principles behind visual navigation.&lt;/p&gt;
+&lt;h3&gt;Notes&lt;/h3&gt;
+&lt;div class="footnote"&gt;
+&lt;hr/&gt;
+&lt;ol&gt;
+&lt;li id="fn:slam"&gt;
+&lt;p&gt;There's plenty of more mathematically-oriented introductions to SLAM. I like &lt;a href="https://people.eecs.berkeley.edu/~pabbeel/cs287-fa09/readings/Durrant-Whyte_Bailey_SLAM-tutorial-I.pdf"&gt;this&lt;/a&gt;, &lt;a href="http://www.roboticsschool.ethz.ch/sfly-summerschool/programme/5.2-Chli-SLAM.pdf"&gt;this&lt;/a&gt;, and &lt;a href="https://github.com/correll/Introduction-to-Autonomous-Robots"&gt;this&lt;/a&gt;. &lt;a class="footnote-backref" href="#fnref:slam" rev="footnote" title="Jump back to footnote 1 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id="fn:fiducial_slam"&gt;
+&lt;p&gt;In the next post, we will use datasets from &lt;a href="https://bitbucket.org/adrlab/rcars/wiki/Home"&gt;this project&lt;/a&gt; that solves the same problem. The creators of the ArUco fiducial marker library have created &lt;a href="http://www.uco.es/investiga/grupos/ava/node/57"&gt;this&lt;/a&gt; as an alternative that doesn't use SLAM techniques. &lt;a class="footnote-backref" href="#fnref:fiducial_slam" rev="footnote" title="Jump back to footnote 2 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id="fn:fiducials"&gt;
+&lt;p&gt;There are many implementations of fiducial markers. While the basic shape is mostly the same, there's been a lot of work in making the detection and extraction of data more reliable. We'll be using &lt;a href="https://april.eecs.umich.edu/wiki/AprilTags"&gt;this&lt;/a&gt; type of marker. &lt;a class="footnote-backref" href="#fnref:fiducials" rev="footnote" title="Jump back to footnote 3 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id="fn:ros"&gt;
+&lt;p&gt;Documentation for ROS is generally very good, especially the parts about the core packages. The core tutorial you want to go through to understand this is &lt;a href="http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber(c%2B%2B)"&gt;here&lt;/a&gt;. &lt;a class="footnote-backref" href="#fnref:ros" rev="footnote" title="Jump back to footnote 4 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id="fn:ros_arch"&gt;
+&lt;p&gt;Communication between nodes happens through either TCP or UDP, but plugins for serial communication are also available. &lt;a class="footnote-backref" href="#fnref:ros_arch" rev="footnote" title="Jump back to footnote 5 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id="fn:bayes"&gt;
+&lt;p&gt;Most uses of probability in robotics take the Bayesian interpretation, as opposed to the frequentist. &lt;a href="https://www.amazon.com/Probabilistic-Robotics-Intelligent-Autonomous-Agents/dp/0262201623"&gt;This book&lt;/a&gt; expands the localization subject with constant references to probabilistic concepts. &lt;a class="footnote-backref" href="#fnref:bayes" rev="footnote" title="Jump back to footnote 6 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id="fn:fgraph"&gt;
+&lt;p&gt;A more formal introduction to factor graphs is available in the &lt;a href="https://research.cc.gatech.edu/borg/sites/edu.borg/files/downloads/gtsam.pdf"&gt;GTSAM tutorial&lt;/a&gt; and its &lt;a href="https://bitbucket.org/gtborg/gtsam/raw/25bf277cde12211d1c553b3fc6e59b3f942c79de/doc/math.pdf"&gt;documentation&lt;/a&gt;. &lt;a class="footnote-backref" href="#fnref:fgraph" rev="footnote" title="Jump back to footnote 7 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry><entry><title>Robotics for developers: getting started</title><link href="/robotics-for-developers/getting-started.html" rel="alternate"></link><published>2016-07-28T00:00:00+02:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2016-07-28:robotics-for-developers/getting-started.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;p&gt;This post is the introduction to a series on &lt;strong&gt;programming autonomous robots&lt;/strong&gt; aimed at developers with no background in computer vision or robotics.&lt;/p&gt;
+&lt;p&gt;I've noticed that drones, Arduinos, and virtual reality are raising awareness about the awesomeness of computers that interact with the physical world. On the other hand, roboticists definitely lag behind the web community when it comes to community building and marketing shiny things. There's a lot of great code to discover, but I feel that it doesn't get much love outside the academic circles.&lt;/p&gt;
+&lt;p&gt;This series is my attempt to share some of my knowledge while building up a visual navigation system, and refer readers to cool projects that could be used as plug-and-play components for more complex undertakings.&lt;/p&gt;
+&lt;h2&gt;A look at the "full stack"&lt;/h2&gt;
+&lt;p&gt;One of the most amazing parts of working on robotics is that the proverbial &lt;em&gt;full stack&lt;/em&gt; really is &lt;em&gt;full!&lt;/em&gt; A full collection of technologies, ranging from microcontrollers to CUDA GPUs enables more and more autonomous behaviors. Going from the bottom to the top of the stack, we have:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;em&gt;Actuator control&lt;/em&gt;, i.e. sending precise impulses of electrical current to power the motors with the appropriate torque as requested by the higher layers &lt;sup id="fnref:actuator_control"&gt;&lt;a class="footnote-ref" href="#fn:actuator_control" rel="footnote"&gt;1&lt;/a&gt;&lt;/sup&gt;,&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;em&gt;Low-level control&lt;/em&gt; systems to guarantee the physical stability of the platform. These systems run a fast (~200Hz) real-time control loop using high rate sensor data and very simple controller laws. An example of this is the attitude stabilization present on even the cheapest drones, that uses the gyroscope to stabilize pitch and roll of the vehicle.&lt;sup id="fnref:low_level_control"&gt;&lt;a class="footnote-ref" href="#fn:low_level_control" rel="footnote"&gt;2&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;em&gt;Basic autonomous behaviors&lt;/em&gt;, i.e. quick actions that don't need a lot of feedback from the environment. For example, taking off a drone or backing off after hitting a wall. Due to their simplicity, these behaviors can be scripted without the need for learning algorithms or statistical approaches.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;em&gt;Localization and place-awareness&lt;/em&gt; required for long-term autonomous behavior and decision-making. There are dozens of navigation techniques, based on all kinds of sensors and tailored for different environments and precision/speed tradeoffs.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;em&gt;Fully autonomous behaviors&lt;/em&gt; that use statistical techniques for path planning, complex interactions with an evolving environment, and an high level interface to the human user. For example, one solid objective would be autonomous inspection of an unknown building (&lt;a href="https://github.com/ethz-asl/nbvplanner"&gt;maybe maximizing exploration gain&lt;/a&gt;).&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Next steps&lt;/h2&gt;
+&lt;p&gt;The rest of the posts in this series will focus on the &lt;em&gt;localization&lt;/em&gt; problem.&lt;/p&gt;
+&lt;p&gt;We're going to bring together all the software components needed to use a camera and Inertial Measurement Unit (IMU, think accelerometer in your phone) to provide the robot with decent location data. I'll make sure to leverage widely used platforms and patterns, drawing from both academia and research, so that this overview will give you a solid idea about the current state of the art.&lt;/p&gt;
+&lt;p&gt;I won't be diving in boring details such as package installation or network setup and will instead assume a good proficiency in software development on a linux environment. For practical reasons, we also won't talk about any specific hardware platform, but rather use recorded data sets provided by the community.&lt;/p&gt;
+&lt;h3&gt;Notes&lt;/h3&gt;
+&lt;div class="footnote"&gt;
+&lt;hr/&gt;
+&lt;ol&gt;
+&lt;li id="fn:actuator_control"&gt;
+&lt;p&gt;The most basic example would be converting a number from 0-100 to a modulated signal delivered through the &lt;a href="https://www.arduino.cc/en/Tutorial/PWM"&gt;PWM hardware&lt;/a&gt; of a microcontroller. Additional power electronics will then use this signal to control power flowing from the battery. &lt;a class="footnote-backref" href="#fnref:actuator_control" rev="footnote" title="Jump back to footnote 1 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id="fn:low_level_control"&gt;
+&lt;p&gt;Most solutions eventually rely on some complex combination of a very simple idea, the proportional controller (PID). For a very cool state-of-the-art solution that uses GPUs to simulate physical behavior, &lt;a href="http://spectrum.ieee.org/cars-that-think/transportation/self-driving/autonomous-mini-rally-car-teaches-itself-to-powerslide"&gt;look here&lt;/a&gt;. &lt;a class="footnote-backref" href="#fnref:low_level_control" rev="footnote" title="Jump back to footnote 2 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry><entry><title>Phoenix WebSockets from the ground up</title><link href="/phoenix-websockets-ground-up.html" rel="alternate"></link><published>2016-05-31T00:00:00+02:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2016-05-31:phoenix-websockets-ground-up.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;p&gt;Inspired by the &lt;a href="http://youtube.com/watch?v=IDKCSheBc-8"&gt;Phoenix is not your
+application&lt;/a&gt; presentation, I dug into
+Phoenix's internals to investigate how to use a custom WebSockets protocol
+while retaining the well-thought abstractions and patterns.  I'm especially
+referring to Phoenix's solid pubsub backends, integration with the Cowboy HTTP
+server, and configuration/logging handling.&lt;/p&gt;
+&lt;p&gt;I was surprised to see that the code involved is very small and readable, with
+the exception of some magic patterns to shuffle between various shapes of
+return values, GenServer state changes, and the like. On the bright side, such
+code would have been hair-pulling to implement in a language without pattern
+matching.&lt;/p&gt;
+&lt;p&gt;What follows is a log of my journey through the code base, and all the moving
+pieces that come together for Phoenix's awesome WebSockets support.&lt;/p&gt;
+&lt;h2&gt;Configuration&lt;/h2&gt;
+&lt;p&gt;First, we take a &lt;em&gt;top down&lt;/em&gt; look at how a Phoenix application is configured to
+handle WebSockets, starting from the user-provided entry point and reaching
+the configuration of the Cowboy HTTP server.&lt;/p&gt;
+&lt;h3&gt;Endpoint (phoenix/endpoint.ex)&lt;/h3&gt;
+&lt;p&gt;Your application's endpoint will use &lt;code&gt;Phoenix.Endpoint&lt;/code&gt; and have one or more calls to
+its &lt;code&gt;socket&lt;/code&gt; macro to set up the URLs that will be handling websockets. The &lt;code&gt;socket&lt;/code&gt;
+macro accumulates socket information in the &lt;code&gt;@phoenix_sockets&lt;/code&gt; attribute:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;defmacro socket(path, module) do
+    quote do
+        @phoenix_sockets {unquote(path), unquote(module)}
+    end
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;and the &lt;code&gt;__before_compile__&lt;/code&gt; macro creates a function that returns that
+attribute itself:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;defmacro __before_compile__(env) do
+    sockets = Module.get_attribute(env.module, :phoenix_sockets)
+
+    quote do
+        def __sockets__, do: unquote(sockets)
+    end
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The &lt;code&gt;Endpoint&lt;/code&gt; also starts the &lt;code&gt;Adapter&lt;/code&gt; supervision loop:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;def start_link do
+    Adapter.start_link(@otp_app, __MODULE__)
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Adapter (phoenix/endpoint/adapter.ex)&lt;/h3&gt;
+&lt;p&gt;The supervisor tree includes a &lt;code&gt;Phoenix.Endpoint.Server&lt;/code&gt; supervisor, that
+we're going to look at next.&lt;/p&gt;
+&lt;h3&gt;Endpoint.Server (phoenix/endpoint/server.ex)&lt;/h3&gt;
+&lt;p&gt;Calls back to the &lt;code&gt;CowboyHandler&lt;/code&gt; and starts supervising the &lt;code&gt;child_spec&lt;/code&gt; it returns.&lt;/p&gt;
+&lt;h3&gt;Endpoint.CowboyHandler&lt;/h3&gt;
+&lt;p&gt;The &lt;code&gt;child_spec&lt;/code&gt; function looks at the sockets defined in the &lt;code&gt;Endpoint&lt;/code&gt;. It
+looks up the corresponding transport for each one and passes the bunch to the
+&lt;code&gt;Plug.Adapters.Cowboy&lt;/code&gt; Cowboy adapter.&lt;/p&gt;
+&lt;h2&gt;Communication&lt;/h2&gt;
+&lt;p&gt;This section traces the flow of data arriving as a WebSockets message as it
+bubbles up towards the application logic the developer has implemented. This
+will take a &lt;em&gt;bottom-up&lt;/em&gt; perspective, from the Cowboy handler to the user-
+provided callbacks.&lt;/p&gt;
+&lt;h3&gt;Endpoint.CowboyWebSocket&lt;/h3&gt;
+&lt;p&gt;When incoming messages arrive on the wire, Cowboy calls the appropriate functions on the
+&lt;code&gt;CowboyWebSocket&lt;/code&gt; module. In turn, these pass the payload up to the
+corresponding function in the &lt;code&gt;Transports.WebSocket&lt;/code&gt; module, such as:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;def websocket_handle({opcode = :text, payload}, req, {handler, state}) do
+    handle_reply req, handler, handler.ws_handle(opcode, payload, state)
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Transport.WebSocket&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;Transport.WebSocket&lt;/code&gt; implements the &lt;code&gt;Socket.Transport&lt;/code&gt; behaviour and uses many convenience functions defined there to handle connection, disconnection, serialization, and deserialization. In a sense, it acts as a middleman between the socket and the channel, shuffling messages back and forth when appropriate.&lt;/p&gt;
+&lt;p&gt;On &lt;em&gt;connection&lt;/em&gt;, &lt;code&gt;Transports.WebSocket&lt;/code&gt; calls back to the &lt;code&gt;connect&lt;/code&gt; function
+in &lt;code&gt;Socket.Transport&lt;/code&gt;. After setting up a new &lt;code&gt;Socket&lt;/code&gt; struct that will be
+kept as part of the process state, that function calls back the &lt;code&gt;connect&lt;/code&gt;
+function in the user-defined module to handle authentication.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Incoming messages&lt;/em&gt; (&lt;code&gt;ws_handle&lt;/code&gt;), are dispatched to the right channel using the &lt;code&gt;Socket.Transport.dispatch&lt;/code&gt; function, that figures out the right channel by looking at the &lt;code&gt;HashDict&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;def dispatch(%Message{} = msg, channels, socket) do
+    channels
+    |&amp;gt; HashDict.get(msg.topic)
+    |&amp;gt; do_dispatch(msg, socket)
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;and then actually sends the payload to the &lt;code&gt;Channel&lt;/code&gt; process:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;defp do_dispatch(channel_pid, msg, _socket) do
+    send(channel_pid, msg)
+    :noreply
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Especially interesting is the &lt;code&gt;dispatch&lt;/code&gt; function that handles new topic topic
+subscriptions, with signature:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;defp do_dispatch(nil, %{event: "phx_join", topic: topic} = msg, socket) do
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;that checks whether the user has defined a channel corresponding to the
+current topic,&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;if channel = socket.handler.__channel__(topic, socket.transport_name) do
+    socket = %Socket{socket | topic: topic, channel: channel}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;has the &lt;code&gt;Socket&lt;/code&gt; &lt;code&gt;join&lt;/code&gt; it,&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;Phoenix.Channel.Server.join(socket, msg.payload)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;and replies positively to the client:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;{:joined, pid, %Reply{ref: msg.ref, topic: topic, status: :ok, payload: response}}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Channel.Server&lt;/h3&gt;
+&lt;p&gt;As the &lt;code&gt;Channel&lt;/code&gt; module itself is only a behaviour that user code needs to
+adhere to, most of the actual functionality is implemented in the Genserver at
+&lt;code&gt;Channel.Server&lt;/code&gt;. Each new socket connection causes a new &lt;code&gt;Channel.Server&lt;/code&gt; to
+be spun up. Precisely, it's the transport that calls the &lt;code&gt;join&lt;/code&gt; function in
+the &lt;code&gt;Channel.Server&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;def join(socket, auth_payload) do
+    ref = make_ref()
+    case GenServer.start_link(__MODULE__, {socket, auth_payload, self(), ref}) do
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;in the &lt;code&gt;init&lt;/code&gt; GenServer callback, the channel asks the &lt;code&gt;Pubsub.Server&lt;/code&gt; to
+subscribe to its topic:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;PubSub.subscribe(socket.pubsub_server, self(), socket.topic,
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;and then messages itself back the result of the subscription, so that it can
+handle messages.&lt;/p&gt;
+&lt;p&gt;Broadcasts are sent through the pubsub server:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;def broadcast(pubsub_server, topic, event, payload) do
+    PubSub.broadcast pubsub_server, topic, %Broadcast{
+      topic: topic,
+      event: event,
+      payload: payload
+    }
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Finally, messages received from the pubsub server are handled by the user's
+application logic implemented in the channel's &lt;code&gt;handle_in&lt;/code&gt; function:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="elixir"&gt;def handle_info(%Message{topic: topic, event: event, payload: payload, ref: ref},
+                %{topic: topic} = socket) do
+    event
+    |&amp;gt; socket.channel.handle_in(payload, put_in(socket.ref, ref))
+    |&amp;gt; handle_result(:handle_in)
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Conclusions&lt;/h2&gt;
+&lt;p&gt;While well thought-out, the internals are pretty tightly coupled to the topic-
+based nature of Phoenix's WS protocol. Transports, channels, and the pubsub
+server all operate by switching messages based on their topic. While flexibile
+enough for most clean-slate real time applications, this choice makes it
+somewhat hard to retro-fit an existing protocol without overhauling
+significant parts of the stack.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry><entry><title>Building static sites with Django</title><link href="/switch-static-site-for-side-projects.html" rel="alternate"></link><published>2015-12-01T00:00:00+01:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2015-12-01:switch-static-site-for-side-projects.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;p&gt;Using Django to build lighting fast static sites that are easy to deploy.&lt;/p&gt;
+&lt;p&gt;Technology choices have a way of staying with you when keeping side projects alive for more than a few years. In my case, Django has been great in the development and iteration phases, but deployment has given me more headaches that I would hope for.&lt;/p&gt;
+&lt;p&gt;In this post, I'm going to talk about my experience generating, serving and maintaining a faster and more reliable site using a static generator for Django.&lt;/p&gt;
+&lt;h2&gt;The project&lt;/h2&gt;
+&lt;p&gt;I co-run a marketing site that does around 10k daily hits, with around 100 content-heavy pages available in 10 languages around the world. Ideally, I would want to run this from a single small VPS (1GB ram) without UptimeRobot alerts setting off in the middle of the night.&lt;/p&gt;
+&lt;p&gt;While undeniably solid, I felt that the &lt;code&gt;uwsgi&lt;/code&gt; + &lt;code&gt;nginx&lt;/code&gt; stack needed a bit more loving care that I had to give. All things considered, I'd rather be programming rather than writing configuration files or reading logs.&lt;/p&gt;
+&lt;p&gt;At the same time, it looks like static site generators are everyone's new favourite open source project (after JS frameworks, of course). I've had good luck with &lt;a href="https://github.com/getpelican/pelican"&gt;Pelican&lt;/a&gt; in the past, but prefer to keep the content in the database, not in a tree of text files.&lt;/p&gt;
+&lt;p&gt;That's why I've decided to build a static site alongside Django, keeping the lovely admin interface and saving a lot of work in the process.&lt;/p&gt;
+&lt;h2&gt;Creating a static site with Django&lt;/h2&gt;
+&lt;p&gt;Luckily, the &lt;a href="https://github.com/mtigas/django-medusa"&gt;django-medusa&lt;/a&gt; app met most of my requirements:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;minimal&lt;/em&gt; code changes are required on Django's side: the same project can be run under &lt;code&gt;uwsgi&lt;/code&gt; or generated as a static tree;&lt;/li&gt;
+&lt;li&gt;does its magic by hacking Django's testing machinery, so it doesn't have external dependencies and doesn't need to fire up a web server;&lt;/li&gt;
+&lt;li&gt;did I mention I got to reuse dozens of templates, template tags, and database queries?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Implementation details&lt;/h3&gt;
+&lt;p&gt;I needed to make sure all arguments were passed in as part of the URL (and not as query parameters). This required a bit of regex magic on the URL definitions. For example, I wanted to have optional trailing fragments with the current page and had to use the horrible:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;(r'^cool-page(?:/(?P&amp;lt;page&amp;gt;[0-9]+))?/$')
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;to make sure that the URLs would be reversed correctly (forgetting the final slash is severely punished by the SEO gods).&lt;/p&gt;
+&lt;p&gt;The biggest chore is defining a list of all URLs that should be hit while rendering the site. On the bright side, I consider this a kind of &lt;em&gt;integration testing&lt;/em&gt; of the database, views, and template layers.&lt;/p&gt;
+&lt;p&gt;Most URL definitions will use &lt;code&gt;django.core.urlresolvers.reverse_lazy&lt;/code&gt; to refer to names paths in the &lt;code&gt;urls.py&lt;/code&gt; module. For example:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;class FixedPages(DiskStaticSiteRenderer):
+
+    def get_paths(self):
+        return set([
+            reverse_lazy('index'),
+            reverse_lazy('about-page'),
+            reverse_lazy('top-10')
+        ])
+
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Paginated lists that hit the database are trickier, since the total number of pages is not known in advance, and an additional database query is needed.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;def get_paths(slug):
+    qs = Article.objects.filter(category__slug=slug)
+    pages_range = range(2, (qs.count()-1) // 10 + 2)
+
+    return set([
+        [rev('category_list', args=(slug, page)) for page in pages_range] +
+        [rev('category_list', args=(slug,))]])
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I've done some more hacking to render multiple domains and store the HTMLs in different folders:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;from django_medusa.renderers import DiskStaticSiteRenderer
+
+def CustomHostDiskRenderer(DiskStaticSiteRenderer):
+
+    def __init__(self, host_name):
+        super(DiskStaticSiteRenderer, self).__init__(self)
+
+        self.http_host = host_name
+        self.DEPLOY_DIR = os.path.join(
+            settings.MEDUSA_DEPLOY_DIR,
+            self.http_host)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;A good choice&lt;/h2&gt;
+&lt;p&gt;It now takes around 1 minute to completely rebuild my static site in a few (human) languages, and I've yet to feel the need to set up incremental builds to speed up the process. A few lines in nginx's configuration got me:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;crazy speed that will hopefully be appreciated by users and rewarded by Google,&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;built-in integration testing since all pages are generated for each deployment,&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;freedom from cache invalidation and &lt;code&gt;uwsgi&lt;/code&gt; configuration headaches, with plenty of free RAM.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;While many bigger sites will opt for a static site to scale better under load, I've found these tricks to be useful for smaller side projects as well.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry><entry><title>Domain sharding in Django</title><link href="/domain-sharding-django.html" rel="alternate"></link><published>2015-10-13T00:00:00+02:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2015-10-13:domain-sharding-django.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;p&gt;It's 2015. Static files should be served by a CDN. Period. This has several advantages, the most obvious being:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;it frees up the resources of your main server, both in bandwidth and CPU terms&lt;/li&gt;
+&lt;li&gt;since requests to CDN assets are on a different domain, the browser doesn't have to send (useless) cookies with every request&lt;/li&gt;
+&lt;li&gt;most CDN providers have datacenters all over the world to make your site &lt;em&gt;more faster&lt;/em&gt; for more users.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In this article, we are going to look at &lt;strong&gt;domain sharding&lt;/strong&gt;, an additional trick to speed up loading of media-heavy sites.&lt;/p&gt;
+&lt;h2&gt;Why more is more&lt;/h2&gt;
+&lt;p&gt;Once upon a time, when broadband was far on the horizon, browsers used to have a tight ceiling on the maximum numbers of concurrent requests to a single domain (around 2). These days the situation has improved, and mainstream browsers have pushed this limit up to around 7-8. However, there's still room for improvement by letting browsers load assets from different domains, thus lifting the actual &lt;em&gt;global&lt;/em&gt; connection limit and having your media downloads saturate the user's connection.&lt;/p&gt;
+&lt;h2&gt;Doing it in Django&lt;/h2&gt;
+&lt;p&gt;While not part of the many batteries included with Django, sharding of media files is pretty easy to implement. There's actually a &lt;a href="https://github.com/coagulant/django-webperf"&gt;project&lt;/a&gt; on Github with a nice implementations a a custom &lt;code&gt;Storage&lt;/code&gt;. Unfortunately, I had some issues when using it other 3rd party modules. Anyhow, I'm posting a slightly revised version which is friendlier and uses inheritance on the &lt;code&gt;__init__&lt;/code&gt; function.&lt;/p&gt;
+&lt;script src="https://gist.github.com/nicolov/7d993cc12203e7b81e08.js"&gt;&lt;/script&gt;
+&lt;p&gt;As a side note, I'm also using the &lt;code&gt;easy_thumbnails&lt;/code&gt; module for, you guessed it, thumbnails, and also had to set the &lt;code&gt;THUMBNAIL_DEFAULT_STORAGE&lt;/code&gt; variable in &lt;code&gt;settings.py&lt;/code&gt; to make sharding work for images.&lt;/p&gt;
+&lt;h2&gt;Mobile, be aware&lt;/h2&gt;
+&lt;p&gt;Some recent articles suggest that excessive reliance on domain sharding may actually be detrimental for mobile users due to the behaviour of mobile networks. Have a look &lt;a href="http://www.mobify.com/blog/domain-sharding-bad-news-mobile-performance/"&gt;here&lt;/a&gt; if your website has many visitors on 3/4G networks.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry><entry><title>SQLAlchemy queries in Django</title><link href="/sql-alchemy-queries-in-django.html" rel="alternate"></link><published>2015-10-02T00:00:00+02:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2015-10-02:sql-alchemy-queries-in-django.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;p&gt;Django's ORM is great for 99% of the common web development use cases. Every now and then, however, a bit more flexibility would go a long way and help stay out of the raw SQL rabbit hole. For example, reporting queries are difficult to build with Django's API and could benefit from a little more abstraction.&lt;/p&gt;
+&lt;p&gt;In this respect, I believe that SQLAlchemy's &lt;a href="http://docs.sqlalchemy.org/en/latest/core/tutorial.html"&gt;SQL Expression Engine&lt;/a&gt; allows for significant flexibility with neat and reusable code. In this piece, we will look at how to write queries with the Expression Engine and have them executed by Django's DB engine without additional configuration.&lt;/p&gt;
+&lt;h2&gt;Integrating Django and SQLAlchemy&lt;/h2&gt;
+&lt;p&gt;The great &lt;a href="https://github.com/Deepwalker/aldjemy"&gt;aldjemy&lt;/a&gt; package makes the initial integration painless, and sets up SQLAlchemy to reuse Django's DB connection.&lt;/p&gt;
+&lt;p&gt;However, its README focuses on on ORM-style queries using SQLAlchemy's own ORM API. Instead, let's look at how to extract the table information to run our own queries built using the expression engine.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;from aldjemy.core import get_tables, get_engine
+from sqlalchemy.sql import select
+
+# for the default DB
+engine = get_engine()
+# for another DB
+engine = get_engine('tracking')
+
+# a dict with DB tables
+tables = get_tables()
+
+# each table can now be accessed to build queries:
+widgets = tables['widgets']
+
+query = select([
+            widget.c.id,
+            widget.c.name])
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Running the query&lt;/h2&gt;
+&lt;p&gt;Since the &lt;code&gt;engine&lt;/code&gt; object is already available, we can just open a connection and run the query:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;conn = engine.connect()
+result = conn.execute(query)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;As an added note, I've found &lt;a href="http://pandas.pydata.org"&gt;Pandas&lt;/a&gt; to be very useful in these kinds of situations. In fact, easy column and row-level operations at the Python level nicely complement the flexibility in data retrieval afforded by SQLAlchemy.&lt;/p&gt;
+&lt;p&gt;When using Pandas, fetching the query results into a DataFrame is even easier:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;data_frame = pandas.read_sql_query(query, engine)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Under the hood&lt;/h2&gt;
+&lt;p&gt;While Django doesn't support connection pooling, it obviously has its own transaction system which is syncronized with the request/response cycle. Aldjemy plugs into this with the &lt;code&gt;core.DjangoPool&lt;/code&gt; class which operates as a SQLAlchemy &lt;code&gt;NullPool&lt;/code&gt; that piggybacks on Django's connections. Each connection is wrapped in a &lt;code&gt;wrapper.Wrapper&lt;/code&gt; to disable SQLAlchemy's handling of transactions and rely on Django's.&lt;/p&gt;
+&lt;p&gt;Tables are generated through reflection of Django's models in the &lt;code&gt;tables.generate_tables&lt;/code&gt; function. Aldjemy keeps a mapping of Django field types to SQLAlchemy types and iterates through each model to add the relevant columns to its table.&lt;/p&gt;
+&lt;h2&gt;Conclusions&lt;/h2&gt;
+&lt;p&gt;We have seen how to use SQLAlchemy's SQL Expression Language to run complex queries on Django's database without needing to create additional connections or manually define the database schema.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry><entry><title>Using (React) Bootstrap components in Reagent</title><link href="/boostrap-components-reagent-clojurescript.html" rel="alternate"></link><published>2015-09-26T00:00:00+02:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2015-09-26:boostrap-components-reagent-clojurescript.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;h2&gt;ClojureScript and Reagent&lt;/h2&gt;
+&lt;p&gt;ClojureScript builds on the solid foundations of Clojure to make frontend web development straightforward and fun. Besides, functional concepts in CLJS are a very good match for React's vision of components and immutability.&lt;/p&gt;
+&lt;p&gt;If you want to use React as a view layer in ClojureScript, you will need either of two projects: OM and Reagent. While OM seems to be the better known of the two (among the others, used by CircleCI for their web-app), its API retains much of React's verbosity. For a more elaborate comparison, take a look &lt;a href="http://theatticlight.net/posts/Om-and-Reagent/"&gt;here&lt;/a&gt;. All things considered, I like &lt;strong&gt;Reagent&lt;/strong&gt; better and decided it warranted some experimentation time.&lt;/p&gt;
+&lt;h2&gt;The problem&lt;/h2&gt;
+&lt;p&gt;These days, Bootstrap components are the bread and butter of rapid web prototyping, and life's hard without them, even in Reagent. Unfortunately, while OM has its &lt;a href="https://github.com/racehub/om-bootstrap"&gt;own library&lt;/a&gt; of components, no such convenience exists for Reagent.&lt;/p&gt;
+&lt;p&gt;On the other hand, we can easily wrap the &lt;a href="https://react-bootstrap.github.io/"&gt;react-bootstrap&lt;/a&gt; project and have access to all the goodies.&lt;/p&gt;
+&lt;h2&gt;Using Bootstrap components&lt;/h2&gt;
+&lt;p&gt;First, we add the CLJSJS dependency to the project. I'm using Leiningen, so it's just a matter of editing the &lt;code&gt;project.clj&lt;/code&gt; file:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;(defproject demo-proj "0.1.0"
+  :dependencies [[org.clojure/clojure "1.6.0"]
+                 [org.clojure/clojurescript "0.0-3211"]
+                 [reagent "0.5.0"]
+                 [cljsjs/react-bootstrap "0.25.1-0"]]
+  ...)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Going to the views files, we require the React Bootstrap namespace:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;(ns demo-project.views
+    (:require [reagent.core :as reagent]
+              [cljsjs.react-bootstrap]))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We then use the magic &lt;code&gt;adapt-react-class&lt;/code&gt; method (&lt;a href="https://reagent-project.github.io/news/news050.html"&gt;reference&lt;/a&gt;) to convert a React component to a Reagent-flavoured one that can be used directly:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;(def Button (reagent/adapt-react-class (aget js/ReactBootstrap "Button")))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The &lt;code&gt;Button&lt;/code&gt; component is now ready to use within the Hiccup templates:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;[:div
+  [:h2 "A sample title"]
+  [Button "with a button"]]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Wrapping up&lt;/h2&gt;
+&lt;p&gt;We have seen how to take advantage of the vast amount of community-contributed React components and use them whithin a Reagent application without much effort.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry><entry><title>Review of the CS61AS programming MOOC on EdX Edge</title><link href="/cs61as-programming-mooc-review.html" rel="alternate"></link><published>2015-09-16T00:00:00+02:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2015-09-16:cs61as-programming-mooc-review.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;p&gt;With the recent upsurge in the cachet of functional programming, your average self-taught developer will find himself in lack (real of perceived) of fundamental computer science concepts. For this reason, I've recently worked through the EdX Edge course based on Berkeley's CS61AS introductory computer science course. I've already published the homework solutions on &lt;a href="https://github.com/nicolov/cs61as-racket-homework"&gt;GitHub&lt;/a&gt; and this is my short review of the course itself.&lt;/p&gt;
+&lt;h2&gt;The course&lt;/h2&gt;
+&lt;p&gt;The course is basically a tutored, watered-down version of the famous book "Structure and Interpretation of Computer Programs", by Abelson and Sussman. A fair part of the exercises is taken straight from SICP, together with some additional coursework by the authors.&lt;/p&gt;
+&lt;p&gt;The material is based on a didactic dialect of LISP (Simply Scheme) but isn't overly focused on language details. Besides, LISPs don't have much syntax to begin with. I've done the exercises using Racket and only had to adapt a few idioms. You could probably use the homework as a nice and gentle introduction to LISP-like languages.&lt;/p&gt;
+&lt;h2&gt;Content&lt;/h2&gt;
+&lt;p&gt;The first chapters will definitely be boring if you have already worked through some other functional programming material. On the other hand, the presentation of trees and other data structures was straight to the point and helped reinforced by useful exercises.&lt;/p&gt;
+&lt;p&gt;Mutation and state management are important topics in today's world of concurrent programming. The course doesn't disappoint in this respect, offering thoughtful materials and exercises about implementing data structures with mutable lists and handling the ripercussions of mutability.&lt;/p&gt;
+&lt;p&gt;The course also gets you to implement your own object oriented constructs by way of closures and other core concepts. After the initial enlightenment, that chapter got fairly boring as most experienced developers are already familiar with the ideas of message passing and internal object state.&lt;/p&gt;
+&lt;p&gt;The final chapters about streams and interpreters were the most challenging and mind-bending of all, probably because these ideas don't appear very often in your average web dev's workday. If nothing, I'd definitely recommend joining the course for those chapters alone. &lt;/p&gt;
+&lt;h2&gt;Exercises&lt;/h2&gt;
+&lt;p&gt;As mentioned above, the course contains a selection of exercises from SICP, making it easier to make your way through an otherwise intimidating book. The progression is nicely graded, guiding you through harder and harder excercises.&lt;/p&gt;
+&lt;p&gt;I've managed to implement most of the homework in Racket instead of Scheme, as I felt it was an easier environment to set up on the Mac.&lt;/p&gt;
+&lt;h2&gt;Final verdict&lt;/h2&gt;
+&lt;p&gt;The course lives up to its reputation and offers a great theoretical grouding for self-taught developers. I would suggest skipping straight to units 3 and 4 to deal with the juicier concepts.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry><entry><title>Automatic reconnection of Websockets in Autobahn</title><link href="/automatic-reconnection-websockets-autobahn.html" rel="alternate"></link><published>2015-08-10T00:00:00+02:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2015-08-10:automatic-reconnection-websockets-autobahn.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;p&gt;After years spent fiddling with inferior technologies, web developers finally have a way to do slick and real-time two-way communication between browser and server. This functionality comes in the way of the Websocket API, which is supported in most &lt;a href="http://caniuse.com/#feat=websockets"&gt;reasonably modern&lt;/a&gt; browsers.&lt;/p&gt;
+&lt;p&gt;Websockets are not only used within the browser though. Their simple message-based API can be successfully leveraged for communications of all kinds on top of TCP. In the case of Python, multiple libraries are available. Of these, &lt;a href="https://github.com/tavendo/AutobahnPython"&gt;AutobahnJS&lt;/a&gt; looked the most promising to me due to:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;support for both Twisted and Python's core &lt;code&gt;asyncio&lt;/code&gt;, for future proofing&lt;/li&gt;
+&lt;li&gt;extensive test suite&lt;/li&gt;
+&lt;li&gt;great examples and documentation&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;The basic example&lt;/h2&gt;
+&lt;p&gt;Getting started with Autobahn is easy with the included &lt;a href="https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/websocket/echo"&gt;examples&lt;/a&gt;. However, this simple setup is not robust due to the very nature of TCP. Dropped connections are not detected until one of the two parties tries to send the message. This is usually not an issue for browser use, since the user would frequently refresh the page relatively frequently anyway.&lt;/p&gt;
+&lt;p&gt;On the other hand, server-to-server communication requires better handling of unstable connections. In the following sections, we will look at ways to make Websockets more resilient and re-estabilish the connection in case of problems.&lt;/p&gt;
+&lt;h2&gt;Pinging to detect broken connections&lt;/h2&gt;
+&lt;p&gt;In our example setup, the server is available at a fixed IP address and waits for incoming connections from the client. Luckily, the Websocket protocol provides a ping/response mechanism to keep the connection alive (some more information on heartbeat pings is available &lt;a href="http://django-websocket-redis.readthedocs.org/en/latest/heartbeats.html"&gt;here&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;On the server, we modify the example to set additional protocol options:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;factory = WebSocketServerFactory(debug=False)
+factory.protocol = MyServerProtocol
+# enable automatic pinging
+factory.setProtocolOptions(autoPingInterval=5,
+                           autoPingTimeout=2)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;With this change, the server will detect a dropped connection after at most 5+2 seconds, i.e. once the ping timeout is over.&lt;/p&gt;
+&lt;p&gt;At this stage, the client is still unable to detect dropped connections until it tries to send a message. To solve the problem, we add logic to keep track of the time elapsed since the last ping request. This functionality is implemented as additional methods in the &lt;code&gt;WebSocketClientProtocol&lt;/code&gt; subclass, as follows:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;from autobahn.asyncio.websocket import WebSocketClientProtocol, \
+WebSocketClientFactory
+
+class MyClientProtocol(WebSocketClientProtocol):
+    KEEPALIVE_INTERVAL = 5
+
+    def check_keepalive(self):
+        last_interval = time.time() - self.last_ping_time
+
+        if last_interval &amp;gt; 2*self.PING_INTERVAL:
+            # drop connection
+            self.dropConnection(abort=True)
+        else:
+            # reschedule next check
+            self.schedule_keepalive()
+
+    def schedule_keepalive(self):
+        """ Store the future in the class to cancel it later. """
+        self.keepalive_fut = loop.call_later(self.PING_INTERVAL,
+                                             self.check_keepalive)
+
+    def onOpen(self):
+        """ Start scheduling the keepalive check. """
+        self.last_ping_time = time.time()
+        self.schedule_keepalive()
+
+    def onPing(self, payload):
+        """ Respond to the ping request. """
+        self.last_ping_time = time.time()
+        self.sendPong(payload)
+
+    def connection_lost(self, exc):
+        """ Cancel the scheduled future. """
+        self.keepalive_fut.cancel()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Automatic reconnection&lt;/h2&gt;
+&lt;p&gt;Thanks to the automatic ping, both client and server will detect dropped connections in a timely manner and close the connection. However, we would still like the client to try to reconnect indefinitely. First, we modify the &lt;code&gt;connection_lost&lt;/code&gt; method to stop the event loop:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;class MyClientProtocol(WebSocketClientProtocol):
+    # ...
+
+    def connection_lost(self, exc):
+        """ Cancel the future and stop the event loop. """
+        self.keepalive_fut.cancel()
+        loop.stop()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We also add a &lt;code&gt;while True:&lt;/code&gt; loop in the main code of the module, with a timeout to account for dropped packets during the initial connection:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+while True:
+    fut = loop.create_connection(factory, address, port)
+
+    try:
+        transport, protocol = loop.run_until_complete(
+                                        asyncio.wait_for(fut, 5))
+    except asyncio.TimeoutError:
+        continue
+
+    loop.run_forever()
+
+    # a little timeout before trying again
+    loop.run_until_complete(asyncio.sleep(5))
+
+loop.close()
+
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Simulating dropped connections&lt;/h2&gt;
+&lt;p&gt;Disconnecting the Ethernet cable to simulate dropped connections gets boring very quickly (especially with servers on the cloud..) Use these &lt;code&gt;iptables&lt;/code&gt; commands to start dropping all packets exchanged with &lt;code&gt;$SERVER_IP&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;iptables -A INPUT -s $SERVER_IP -j DROP;
+iptables -A OUTPUT -d $SERVER_IP -j DROP
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;and this one to get rid of the filter when done:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;iptables -D INPUT -s $SERVER_IP -j DROP;
+iptables -D OUTPUT -d $SERVER_IP -j DROP
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Conclusions&lt;/h2&gt;
+&lt;p&gt;We have seen how to set up keepalive pings in the Python Autobahn Websocket library to quickly detect dropped connections and close them. With a little addition of code and some familiarity with Python's &lt;code&gt;asyncio&lt;/code&gt; event loop, the client will also be able to re-estabilish dropped connections to the server.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry><entry><title>Continous integration with Django and Protractor</title><link href="/continous-integration-django-protractor.html" rel="alternate"></link><published>2015-06-10T00:00:00+02:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2015-06-10:continous-integration-django-protractor.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;p&gt;Continous integration is a catchy term to refer to the software engineering practice of frequently committing to the &lt;code&gt;master&lt;/code&gt; branch and running automated tests. Failing builds are tagged so that developers can (in theory) immediately drop everything they are doing to fix them.&lt;/p&gt;
+&lt;p&gt;Besides the criticisms one could raise from an organizational perspective (a nice analysis is &lt;a href="http://www.yegor256.com/2014/10/08/continuous-integration-is-dead.html"&gt;here&lt;/a&gt;), doing CI right means having a reliable set of automated tests that run with appropriate database-backed data. This is somewhat of a challenge with the modern SPA + REST API setup, since the backend and frontend will each have a different set of unit and integration tests expecting certain rows in the database.&lt;/p&gt;
+&lt;p&gt;In this article we are going to look at the popular Django+Angular configuration and lay down an architecture to easily integrate both testing suites (and run them on CircleCI).&lt;/p&gt;
+&lt;h2&gt;The problem with Protractor&lt;/h2&gt;
+&lt;p&gt;Protractor is the de-facto solution for end-to-end testing of Angular.JS applications. Specifications ("specs") for application behaviour can be written following the Jasmine API and easily run from the command line:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;protractor protractor.conf.js --specs="specs/my_spec.js"
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The problem with this setup is that each spec may potentially require a different set of data in the database. Django and DRF (as usual) brilliantly solve the issue by allowing the user to declare a fixture when defining the &lt;code&gt;TestCase&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;class ExampleTests(APITestCase):
+    fixtures = [...]
+
+    def setUp(self):
+        ...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Looking at the problem, we see two potential solutions:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;script the automated testing so that Django management commands &lt;code&gt;flush&lt;/code&gt; and &lt;code&gt;loaddata&lt;/code&gt; are run before each Protractor spec, creating a new database and loading the necessary data.&lt;/li&gt;
+&lt;li&gt;wrap Protractor tests inside a Django management command that sets up a new database, loads the appropriate fixtures, and spawns a Protractor process.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;We will be looking at the second approach, for its DRY awesomeness.&lt;/p&gt;
+&lt;h2&gt;A Django management command&lt;/h2&gt;
+&lt;p&gt;There's an interesting &lt;a href="https://github.com/jpulec/django-protractor"&gt;project on GitHub&lt;/a&gt; offering a tidy Mixin to Django's unit testing classes that spawns a Protractor process with given fixtures. While neat, this is no solution for us because it only ever uses Django's development (and static file) server. I tend to believe that integration tests should be run with as close a configuration to production as possible. In our case, this means that protractor should load the pages through the &lt;em&gt;gunicorn/nginx&lt;/em&gt; stack.&lt;/p&gt;
+&lt;p&gt;On the other hand, not having access to Django's testing classes (that automatically set up and tear down new databases) means handling these jobs ourselves. What came out is a management command that takes command line arguments for both django fixtures and protractor specs:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;python manage.py protractor
+    --protractor-conf="protractor/conf.js"
+    --fixture="protractor/fixture_a.json"
+    --fixture="protractor/fixture_b.json"
+    --specs="protractor/spec_1.spec.js"
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Running everything on CircleCI&lt;/h2&gt;
+&lt;p&gt;Now that all work has been delegated to the management command, all that needs to be done to run protractor tests in CircleCI is to add lines similar to the one above to the &lt;code&gt;test: override:&lt;/code&gt; array in the circle.yml file. As noted below, please keep in mind that the command does &lt;em&gt;not&lt;/em&gt; support parallel testing, since each process shares the same, single, database (unlike normal Django tests that set up their own databases).&lt;/p&gt;
+&lt;h2&gt;Conclusions&lt;/h2&gt;
+&lt;p&gt;Thorough testing requires not only a fair number of test cases, but a variety of different situations as well. To solve this issue, we have shown code for a Django management command that wraps protractor processes to load appropriate database fixtures.&lt;/p&gt;
+&lt;h2&gt;The code&lt;/h2&gt;
+&lt;p&gt;The management command below &lt;strong&gt;flushes&lt;/strong&gt; the database before loading the fixtures requested on the command line. So be careful not to run this on databases with valuable data. The CircleCI VM is obviously fine.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import os, sys, subprocess
+from multiprocessing import Process
+from optparse import make_option
+
+from django.core.management import call_command
+from django.core.management.base import BaseCommand
+from django.db import connection
+from django.conf import settings
+from django.test.runner import setup_databases
+
+from south.management.commands import patch_for_test_db_setup
+
+class Command(BaseCommand):
+    args = '[--protractor-conf] [--runserver-command] [--specs] [--suite]'
+
+    option_list = BaseCommand.option_list + (
+        make_option('--protractor-conf',
+            action='store',
+            dest='protractor_conf',
+            default='protractor.conf.js',
+            help='Specify a destination for your protractor configuration'
+        ),
+        make_option('--specs',
+            action='store',
+            dest='specs',
+            help='Specify which specs to run'
+        ),
+        make_option('--suite',
+            action='store',
+            dest='suite',
+            help='Specify which suite to run'
+        ),
+        make_option('--fixture',
+            action='append',
+            dest='fixtures',
+            help='Specify fixture to load initial data to the database'
+        ),
+    )
+
+    def handle(self, *args, **options):
+        options['verbosity'] = int(options.get('verbosity'))
+
+        if not os.path.exists(options['protractor_conf']):
+            raise IOError("Could not find '{}'"
+                .format(options['protractor_conf']))
+
+        # flush the database
+        call_command('flush', verbosity=1, interactive=False)
+
+        fixtures = options['fixtures']
+        if fixtures:
+            for fixture in fixtures:
+                call_command('loaddata', fixture,
+                             **{'verbosity': options['verbosity']})
+
+        protractor_command = 'protractor {}'.format(options['protractor_conf'])
+        if options['specs']:
+            protractor_command += ' --specs {}'.format(options['specs'])
+        if options['suite']:
+            protractor_command += ' --suite {}'.format(options['suite'])
+
+        self.stdout.write("Running protractor..\n" + protractor_command + "\n")
+        return_code = subprocess.call(protractor_command.split())
+        sys.exit(return_code)
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry><entry><title>Practical, declarative authentication with Angular.JS and ui-router</title><link href="/pratical-authentication-angularjs-uirouter.html" rel="alternate"></link><published>2015-05-10T00:00:00+02:00</published><author><name>Nicolò Valigi</name></author><id>tag:,2015-05-10:pratical-authentication-angularjs-uirouter.html</id><summary type="html">&lt;html&gt;&lt;body&gt;&lt;p&gt;Authentication is one of the core elements of a Single Page Application, but this doesn't mean that all Angular sites implement it correctly. I've seen many examples of overly convoluted solutions that don't take advantage of the capabilities of &lt;code&gt;ui-router&lt;/code&gt;. In this piece, I'll show how to use the &lt;code&gt;resolve&lt;/code&gt;s and parent states to set up authentication requirements in a declarative way.&lt;/p&gt;
+&lt;h2&gt;Don't do this..&lt;/h2&gt;
+&lt;p&gt;A solution I've seen bandied around is to handle the authentication in the controllers, like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;if (!$rootScope.isAuthenticated) {
+    $state.go('login');
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;While seemingly innoucous, this code causes the page to flicker for a moment while the browser is redirected. Besides, the snippet must be replicated in each controller, violating every DRY tenet known to man.&lt;/p&gt;
+&lt;h2&gt;or this..&lt;/h2&gt;
+&lt;p&gt;A wise man once said that &lt;code&gt;ui-router&lt;/code&gt; nested states are a powerful tool to organize your application's states. You could create a global &lt;em&gt;abstract&lt;/em&gt; state and tag it to highlight the fact that it requires authentication.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;.state('private', {
+  abstract: true,
+  // ...
+  data: {
+    requireLogin: true
+  }
+})
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Then you go on and define all other states as children of &lt;code&gt;private&lt;/code&gt;, so that they inherit the tag:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;.state('private.dashboard', {
+    parent: 'private'
+    // ...
+})
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The missing piece is to intercept all route changes and check if the user is allowed to reach a specific state. If not, the browser is redirected to the login page instead.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$rootScope.$on('$stateChangeStart', function (event, toState) {
+    var requireLogin = toState.data.requireLogin;
+
+    if (requireLogin &amp;amp;&amp;amp; !$rootScope.currentUser) {
+      event.preventDefault();
+      $state.go('login');
+    }
+});
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This second solution is more refined than the first, as the interceptor prevents the controller from loading, thus getting rid of the flicker. It still isn't very elegant though, as the user model must be stored in some global state (here &lt;code&gt;$rootScope&lt;/code&gt;) and I don't really like using interceptors when they're not needed.&lt;/p&gt;
+&lt;h2&gt;This is way better!&lt;/h2&gt;
+&lt;p&gt;We finally come to the more elegant and flexible solution. I suggest using nested states in conjunction with another of &lt;code&gt;ui-router&lt;/code&gt;'s powerful features, &lt;code&gt;resolve&lt;/code&gt;. Using &lt;code&gt;resolve&lt;/code&gt; unifies the authentication check with the server call, and provides a nice injectable for all controllers that need access to the user model.&lt;/p&gt;
+&lt;p&gt;When one or more promises are passed in the &lt;code&gt;resolve&lt;/code&gt; property of a state, &lt;code&gt;ui-router&lt;/code&gt; will wait for (&lt;em&gt;all of&lt;/em&gt;) them to be resolved before carrying out the state change. Luckily for us, we can handle a failing promise and redirect to a the login state directly from the &lt;code&gt;resolve&lt;/code&gt; function, like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;.state('private', {
+    abstract: true,
+    resolve: {
+        profile: function(Profile, $log, $state) {
+            return Profile.me().then(function(me) {
+                return me;
+            }, function() {
+                $state.go('login', {redirect: $state.toState.name});
+            });
+        }
+    }
+})
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We now turn to the implementation of the &lt;code&gt;Profile&lt;/code&gt; service, that contains the methods to authenticate the user and the user model itself. In this example, we expect the server to return an HTTP 401 error when accessing the &lt;code&gt;/profile&lt;/code&gt; endpoint without proper authentication. In this case, the rejection of the promise will be passed along to the &lt;code&gt;resolve&lt;/code&gt; function that will redirect the user to the login page.&lt;/p&gt;
+&lt;p&gt;This is a simple implementation of the factory with &lt;a href="angular-restmod"&gt;https://github.com/platanus/angular-restmod&lt;/a&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;angular
+.module('app')
+.factory('Profile') {
+    return restmod.single('/profile').mix({
+        $extend: {
+            Model: {
+                me: function() {
+                    var Profile = this;
+                    return Profile.$search().$asPromise()
+                }
+            }
+        }
+    });
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;By using this pattern, the controllers of all the children states will have access to the &lt;code&gt;profile&lt;/code&gt; injectable. As expected, the user won't be able to reach them until the server responds without errors to the &lt;code&gt;/profile&lt;/code&gt; REST call.&lt;/p&gt;
+&lt;h2&gt;Conclusions&lt;/h2&gt;
+&lt;p&gt;We have compared three different approaches to architect authentication in Angular. The third approach is cleaner and more strongly declarative thanks to &lt;code&gt;ui-router&lt;/code&gt;'s features.&lt;/p&gt;
+&lt;p&gt;What's been missing in this discussion is a description of how to implement the login view and store the credentials obtained from the server. In the simplest case of cookie-based authentication, the browser would take care of these issues. In the more modern case of token-based auth, however, it's the developer's job to keep track of the tokens and send them to the server with each request.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</summary></entry></feed>

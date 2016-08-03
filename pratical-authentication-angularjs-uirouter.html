@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- ## for client-side less
+  <link rel="stylesheet/less" type="text/css" href="/theme/css/style.less">
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
+  -->
+  <link rel="stylesheet" type="text/css" href="/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="/theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Nicolò Valigi">
+  <meta name="description" content="Posts and writings by Nicolò Valigi">
+
+  <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Nicolò Valigi Atom" />
+
+<meta name="keywords" content="">
+
+  <title>
+Practical, declarative authentication with Angular.JS and ui-router    Nicolò Valigi
+  </title>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-67820015-1', 'auto');
+  ga('send', 'pageview');
+
+</script></head>
+
+<body>
+  <aside>
+    <div id="user_meta">
+      <a href="">
+        <img src="/blog/images/logo_white.jpg" alt="logo">
+      </a>
+      <h2><a href="">Nicolò Valigi</a></h2>
+      <p>Chronicles of (constant) learning.</p>
+      <ul class="links">
+        <li><a href="/pages/tutorial-on-robotics-for-developers.html">Tutorial on robotics for developers</a></li>
+      </ul>
+
+      <ul style="padding-left: 0;
+                 margin-left: -5px;
+                 list-style: none;
+                 text-align: center;">
+        <li>
+            <a href="https://github.com/nicolov">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+        <li>
+            <a href="mailto:nicolo.valigi@gmail.com">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-envelope fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+    </ul>
+
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <p>
+      <a href="">Index</a> &brvbar; <a href="/archives.html">Archives</a>
+      &brvbar; <a href="/feeds/all.atom.xml">Atom</a>
+      </p>
+    </header>
+
+<article>
+  <div class="article_title">
+    <h1><a href="/pratical-authentication-angularjs-uirouter.html">Practical, declarative authentication with Angular.JS and ui-router</a></h1>
+  </div>
+  <div class="article_text">
+    <html><body><p>Authentication is one of the core elements of a Single Page Application, but this doesn't mean that all Angular sites implement it correctly. I've seen many examples of overly convoluted solutions that don't take advantage of the capabilities of <code>ui-router</code>. In this piece, I'll show how to use the <code>resolve</code>s and parent states to set up authentication requirements in a declarative way.</p>
+<h2>Don't do this..</h2>
+<p>A solution I've seen bandied around is to handle the authentication in the controllers, like this:</p>
+<pre><code>if (!$rootScope.isAuthenticated) {
+    $state.go('login');
+}
+</code></pre>
+<p>While seemingly innoucous, this code causes the page to flicker for a moment while the browser is redirected. Besides, the snippet must be replicated in each controller, violating every DRY tenet known to man.</p>
+<h2>or this..</h2>
+<p>A wise man once said that <code>ui-router</code> nested states are a powerful tool to organize your application's states. You could create a global <em>abstract</em> state and tag it to highlight the fact that it requires authentication.</p>
+<pre><code>.state('private', {
+  abstract: true,
+  // ...
+  data: {
+    requireLogin: true
+  }
+})
+</code></pre>
+<p>Then you go on and define all other states as children of <code>private</code>, so that they inherit the tag:</p>
+<pre><code>.state('private.dashboard', {
+    parent: 'private'
+    // ...
+})
+</code></pre>
+<p>The missing piece is to intercept all route changes and check if the user is allowed to reach a specific state. If not, the browser is redirected to the login page instead.</p>
+<pre><code>$rootScope.$on('$stateChangeStart', function (event, toState) {
+    var requireLogin = toState.data.requireLogin;
+
+    if (requireLogin &amp;&amp; !$rootScope.currentUser) {
+      event.preventDefault();
+      $state.go('login');
+    }
+});
+</code></pre>
+<p>This second solution is more refined than the first, as the interceptor prevents the controller from loading, thus getting rid of the flicker. It still isn't very elegant though, as the user model must be stored in some global state (here <code>$rootScope</code>) and I don't really like using interceptors when they're not needed.</p>
+<h2>This is way better!</h2>
+<p>We finally come to the more elegant and flexible solution. I suggest using nested states in conjunction with another of <code>ui-router</code>'s powerful features, <code>resolve</code>. Using <code>resolve</code> unifies the authentication check with the server call, and provides a nice injectable for all controllers that need access to the user model.</p>
+<p>When one or more promises are passed in the <code>resolve</code> property of a state, <code>ui-router</code> will wait for (<em>all of</em>) them to be resolved before carrying out the state change. Luckily for us, we can handle a failing promise and redirect to a the login state directly from the <code>resolve</code> function, like this:</p>
+<pre><code>.state('private', {
+    abstract: true,
+    resolve: {
+        profile: function(Profile, $log, $state) {
+            return Profile.me().then(function(me) {
+                return me;
+            }, function() {
+                $state.go('login', {redirect: $state.toState.name});
+            });
+        }
+    }
+})
+</code></pre>
+<p>We now turn to the implementation of the <code>Profile</code> service, that contains the methods to authenticate the user and the user model itself. In this example, we expect the server to return an HTTP 401 error when accessing the <code>/profile</code> endpoint without proper authentication. In this case, the rejection of the promise will be passed along to the <code>resolve</code> function that will redirect the user to the login page.</p>
+<p>This is a simple implementation of the factory with <a href="angular-restmod">https://github.com/platanus/angular-restmod</a>:</p>
+<pre><code>angular
+.module('app')
+.factory('Profile') {
+    return restmod.single('/profile').mix({
+        $extend: {
+            Model: {
+                me: function() {
+                    var Profile = this;
+                    return Profile.$search().$asPromise()
+                }
+            }
+        }
+    });
+}
+</code></pre>
+<p>By using this pattern, the controllers of all the children states will have access to the <code>profile</code> injectable. As expected, the user won't be able to reach them until the server responds without errors to the <code>/profile</code> REST call.</p>
+<h2>Conclusions</h2>
+<p>We have compared three different approaches to architect authentication in Angular. The third approach is cleaner and more strongly declarative thanks to <code>ui-router</code>'s features.</p>
+<p>What's been missing in this discussion is a description of how to implement the login view and store the credentials obtained from the server. In the simplest case of cookie-based authentication, the browser would take care of these issues. In the more modern case of token-based auth, however, it's the developer's job to keep track of the tokens and send them to the server with each request.</p></body></html>
+  </div>
+  <div class="article_meta">
+    <p>Posted on: Sun 10 May 2015</p>
+    <p>Category: <a href="/category/web-frontend-angular.html">web, frontend, angular</a>
+    </p>
+  </div>
+
+
+</article>
+
+
+    <div id="ending_message">
+      <p>&copy; Nicolò Valigi. Built using <a href="http://getpelican.com" target="_blank">Pelican</a>. Theme by Giulio Fidente on <a href="https://github.com/gfidente/pelican-svbhack" target="_blank">github</a>. </p>
+    </div>
+  </main>
+</body>
+</html>

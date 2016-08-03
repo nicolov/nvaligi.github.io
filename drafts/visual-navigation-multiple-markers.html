@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- ## for client-side less
+  <link rel="stylesheet/less" type="text/css" href="/theme/css/style.less">
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
+  -->
+  <link rel="stylesheet" type="text/css" href="/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="/theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Nicolò Valigi">
+  <meta name="description" content="Posts and writings by Nicolò Valigi">
+
+  <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Nicolò Valigi Atom" />
+
+<meta name="keywords" content="">
+
+  <title>
+Visual robot navigation: using multiple markers    Nicolò Valigi
+  </title>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-67820015-1', 'auto');
+  ga('send', 'pageview');
+
+</script></head>
+
+<body>
+  <aside>
+    <div id="user_meta">
+      <a href="">
+        <img src="/blog/images/logo_white.jpg" alt="logo">
+      </a>
+      <h2><a href="">Nicolò Valigi</a></h2>
+      <p>Chronicles of (constant) learning.</p>
+      <ul class="links">
+        <li><a href="/pages/tutorial-on-robotics-for-developers.html">Tutorial on robotics for developers</a></li>
+      </ul>
+
+      <ul style="padding-left: 0;
+                 margin-left: -5px;
+                 list-style: none;
+                 text-align: center;">
+        <li>
+            <a href="https://github.com/nicolov">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+        <li>
+            <a href="mailto:nicolo.valigi@gmail.com">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-envelope fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+    </ul>
+
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <p>
+      <a href="">Index</a> &brvbar; <a href="/archives.html">Archives</a>
+      &brvbar; <a href="/feeds/all.atom.xml">Atom</a>
+      </p>
+    </header>
+
+<article>
+  <div class="article_title">
+    <h1><a href="/drafts/visual-navigation-multiple-markers.html">Visual robot navigation: using multiple markers</a></h1>
+  </div>
+  <div class="article_text">
+    <p>In the <a href="/visual-navigation-following-camera.html">previous article</a>, we have
+extended the basic fiducial marker algorithm by tracking multiple camera poses
+over time. While easy, that step wasn't really useful in isolation, since
+losing track of the "origin" marker meant that we couldn't localize the robot
+at all.</p>
+<p>In this article, we're going to throw multiple markers in the mix, building a
+real map of the environment that we can use for large scale navigation of the
+robot. As long as the detections of new markers take place while any of the
+old ones are still visible, we can grow the map without bounds and explore
+arbitrarily large environments.</p>
+<p>The <em>factor graph</em> for this new setup will look something like this:</p>
+<p><img src="{filename}/images/slam/fgraph_multicam.png" alt="Factor graph for multiple markers" class="img-center"/></p>
+<h2>The code</h2>
+<p>The additional code is very minimal: we now loop over all detected markers,
+add guesses for any newly detected ones, and add a measurement factor for
+each. As expected, each of the <code>MarkerFactor</code>s are connected to the same (i.e.
+current) camera pose:</p>
+<pre><code class="cpp">for (auto const &amp;tag : msg-&gt;tags) {
+    gtsam::Symbol s_marker('M', tag.id);
+
+    if (!estimate_.exists(s_marker)) {
+        // It's the first time we see this new marker: add an estimate
+        // based on the detector pose
+        auto init_pose = estimate_.at&lt;gtsam::Pose3&gt;(s_ic) * gmsgs_pose_to_gtsam(tag.pose);
+        estimate_.insert(s_marker, init_pose);
+    }
+
+    auto corners = tag_to_gtsam_points(tag);
+    graph_.push_back(MarkerFactor(corners, pixel_noise_, s_ic, s_marker, K_, tag_size_));
+}
+</code></pre>
+
+<p>We also have code to publish a "map" of the environment, consisting of all
+detected marker poses together with their ids:</p>
+<pre><code class="cpp">TagMap map;
+
+auto tag_filter = [](const gtsam::Key&amp; k) {
+    return (k &gt;= gtsam::Symbol('M', 0)) &amp;&amp; (k &lt; gtsam::Symbol('N', 0));
+};
+for (const auto&amp; kv : estimate_.filter(tag_filter)) {
+    TagMapElement elem;
+    // The tag id was stored as the index in the node's gtsam::Symbol
+    gtsam::Symbol s(kv.key);
+    elem.id = s.index();
+    auto this_tag_pose = estimate_.at&lt;gtsam::Pose3&gt;(s);
+    elem.pose = gtsam_pose_to_gmsgs(this_tag_pose);
+    map.map.push_back(elem);
+}
+pub_map_.publish(map);
+</code></pre>
+
+<h2>The problem</h2>
+<p>We run the simulator and notice that, when markers enter or leave the frame,
+the position and attitude estimates "jump". The next figure plots the camera Z
+position over time:</p>
+<p><img src="{filename}/images/slam/z_all_1e2.png" alt="Camera trajectory without motion model" class="img-center" /></p>
+<p>We conjecture that the optimization does not find enough frames with both old
+and new markers to converge on the world pose of the latter ones. This means
+that their appearance into the frame with incorrect world poses will cause the
+estimate to spike away from the true value. The next section explores ways of
+solving this problem.</p>
+<h2>Adding a motion model</h2>
+<p>To improve the situation, we can leverage physical intuition about the
+problem. Looking at the factor graph, we notice that the camera poses are not
+connected through each other by any factor. This means that the optimization
+engine has no correlation information between them. However, we know that in
+real life, successive camera positions will be very close together, as the
+robot moves with a limited velocity.</p>
+<p>One easy way to introduce such prior information emulates the approach one
+could use for wheel odometry. We add a factor with the following measurement
+function:</p>
+<pre><code>f(pA, pB) = pA - pB - pBetween
+</code></pre>
+
+<p>where <code>pA</code> and <code>pB</code> are two successive camera poses, and <code>pBetween</code> is zero.
+The minus sign is intended in the Lie algebra of SE3. In GTSAM, this
+measurement function is included as a <code>BetweenFactor</code>.</p>
+<p>The code addition is thus very simple:</p>
+<pre><code class="cpp">graph_.push_back(
+    gtsam::BetweenFactor&lt;gtsam::Pose3&gt;(s_prev_ic,
+                                       s_ic,
+                                       gtsam::Pose3(),
+                                       motion_noise_));
+</code></pre>
+
+<p><code>motion_noise_</code> is the error between the real camera movement and the zero-
+velocity model we have introduced. Very low values will constrain the movement
+so much that the marker observation factors will have no effect on the
+trajectory.</p>
+<p>By plotting the same data we've shown before, we can confirm that the estimates
+are now far less jumpy and more representative of the actual camera motion:</p>
+<p><img src="{filename}/images/slam/z_all_1e4.png" alt="Camera trajectory with zero-velocity motion model" class="img-center" /></p>
+<h2>More sophisticated models</h2>
+<p>The current zero-velocity model is obviously very rough, and we're forced to
+set a rather large error on the <code>BetweenFactor</code> to have reasonable defaults.
+In the next article, we are going to switch to a more sophisticated model
+(constant velocity), with an eye to using accelerometer and gyroscope data to
+provide a more robust estimate (that can also be useful when no camera is
+visible in the frame).</p>
+  </div>
+  <div class="article_meta">
+    <p>Posted on: Fri 20 May 2016</p>
+    <p>Category: <a href="/category/computer-vision-robotics.html">computer-vision robotics</a>
+    </p>
+  </div>
+
+
+</article>
+
+
+    <div id="ending_message">
+      <p>&copy; Nicolò Valigi. Built using <a href="http://getpelican.com" target="_blank">Pelican</a>. Theme by Giulio Fidente on <a href="https://github.com/gfidente/pelican-svbhack" target="_blank">github</a>. </p>
+    </div>
+  </main>
+</body>
+</html>
