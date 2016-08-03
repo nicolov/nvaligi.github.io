@@ -1,8 +1,10 @@
-Title: Switch to a static site for your side projects
+Title: Building static sites with Django
 Date: 2015-12-01
-Category: Backend Django
+Category: web, backend, django
 Slug: switch-static-site-for-side-projects
-Summary: Static websites are becoming more and more widespread. While the scaling benefits are clear, let's look at how they can reduce the (mental) load when managing content-heavy sites.
+Summary: How a few lines can transform your Django project into a static site that's fast and easy to host.
+
+Using Django to build lighting fast static sites that are easy to deploy.
 
 Technology choices have a way of staying with you when keeping side projects alive for more than a few years. In my case, Django has been great in the development and iteration phases, but deployment has given me more headaches that I would hope for.
 
@@ -15,6 +17,8 @@ I co-run a marketing site that does around 10k daily hits, with around 100 conte
 While undeniably solid, I felt that the `uwsgi` + `nginx` stack needed a bit more loving care that I had to give. All things considered, I'd rather be programming rather than writing configuration files or reading logs.
 
 At the same time, it looks like static site generators are everyone's new favourite open source project (after JS frameworks, of course). I've had good luck with [Pelican](https://github.com/getpelican/pelican) in the past, but prefer to keep the content in the database, not in a tree of text files.
+
+That's why I've decided to build a static site alongside Django, keeping the lovely admin interface and saving a lot of work in the process.
 
 ## Creating a static site with Django
 
@@ -50,10 +54,10 @@ class FixedPages(DiskStaticSiteRenderer):
 
 ```
 
-Paginated lists that hit the database are trickier, since you don't know their total number in advance and need to create a `QuerySet` beforehand:
+Paginated lists that hit the database are trickier, since the total number of pages is not known in advance, and an additional database query is needed.
 
 ```
-def get_category_paths(slug):
+def get_paths(slug):
 	qs = Article.objects.filter(category__slug=slug)
 	pages_range = range(2, (qs.count()-1) // 10 + 2)
 
@@ -80,8 +84,12 @@ def CustomHostDiskRenderer(DiskStaticSiteRenderer):
 
 ## A good choice
 
-While many web developers are moving towards static*-er* sites to scale better, I've found that smaller websites will have a different set of benefits:
+It now takes around 1 minute to completely rebuild my static site in a few (human) languages, and I've yet to feel the need to set up incremental builds to speed up the process. A few lines in nginx's configuration got me:
 
-- higher reliability as the app server doesn't need to run on the production machine;
-- no need to deal with complex cache mechanisms (that introduce even more deployment and maintenance complexities);
-- automatic integration testing, since each URL is pre-rendered and all errors show up immediately
+- crazy speed that will hopefully be appreciated by users and rewarded by Google,
+
+- built-in integration testing since all pages are generated for each deployment,
+
+- freedom from cache invalidation and `uwsgi` configuration headaches, with plenty of free RAM.
+
+While many bigger sites will opt for a static site to scale better under load, I've found these tricks to be useful for smaller side projects as well.

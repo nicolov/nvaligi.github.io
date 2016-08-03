@@ -1,6 +1,6 @@
 Title: Practical, declarative authentication with Angular.JS and ui-router
 Date: 2015-05-10
-Category: Web Frontend Angular
+Category: web, frontend, angular
 Slug: pratical-authentication-angularjs-uirouter
 Summary: I describe my favorite Angular.JS authentication pattern which is both simple and flexible, thanks to ui-router's built-in functionality. Say goodbye to boilerplate code in the controllers!
 

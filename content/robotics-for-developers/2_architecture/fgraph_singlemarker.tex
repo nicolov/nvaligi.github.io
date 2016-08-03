@@ -1,0 +1,26 @@
+\documentclass{standalone}
+\usepackage{pgfplots}
+%\usepackage{fontspec}
+\usetikzlibrary{arrows,positioning}
+
+\renewcommand{\familydefault}{\sfdefault}
+
+\begin{document}
+
+\begin{tikzpicture}[auto,decoration={random steps,segment length=1mm,amplitude=0.3pt}]
+
+\node[draw,circle,align=center] (marker_pose) {marker\\pose};
+
+\node[draw,circle,align=center,right=2cm of marker_pose] (cam_pose) {camera\\pose};
+
+\node[draw,circle,size=0.2cm,fill=black,below right=1cm and 1cm of marker_pose, label=below:{Observation}] (meas_fact) {};
+
+\path[-] (marker_pose) edge (meas_fact);
+\path[-] (cam_pose) edge (meas_fact);
+
+\node[draw,circle,size=0.2cm,fill=black,below left=1cm and 1cm of marker_pose, label=below:{Prior}] (prior) {};
+\path[-] (prior) edge (marker_pose);
+
+\end{tikzpicture}
+
+\end{document}
