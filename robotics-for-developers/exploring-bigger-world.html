@@ -3,11 +3,11 @@
 
 <head>
   <!-- ## for client-side less
-  <link rel="stylesheet/less" type="text/css" href="/theme/css/style.less">
+  <link rel="stylesheet/less" type="text/css" href="http://nicolovaligi.com/theme/css/style.less">
   <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
   -->
-  <link rel="stylesheet" type="text/css" href="/theme/css/style.css">
-  <link rel="stylesheet" type="text/css" href="/theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/pygments.css">
   <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 
@@ -37,13 +37,13 @@ Robotics for developers: exploring a bigger world    Nicolò Valigi
 <body>
   <aside>
     <div id="user_meta">
-      <a href="">
+      <a href="http://nicolovaligi.com">
         <img src="/blog/images/logo_white.jpg" alt="logo">
       </a>
-      <h2><a href="">Nicolò Valigi</a></h2>
+      <h2><a href="http://nicolovaligi.com">Nicolò Valigi</a></h2>
       <p>Chronicles of (constant) learning.</p>
       <ul class="links">
-        <li><a href="/pages/tutorial-on-robotics-for-developers.html">Tutorial on robotics for developers</a></li>
+        <li><a href="http://nicolovaligi.com/pages/tutorial-on-robotics-for-developers.html">Tutorial on robotics for developers</a></li>
       </ul>
 
       <ul style="padding-left: 0;
@@ -74,20 +74,20 @@ Robotics for developers: exploring a bigger world    Nicolò Valigi
   <main>
     <header>
       <p>
-      <a href="">Index</a> &brvbar; <a href="/archives.html">Archives</a>
+      <a href="http://nicolovaligi.com">Index</a> &brvbar; <a href="http://nicolovaligi.com/archives.html">Archives</a>
       </p>
     </header>
 
 <article>
   <div class="article_title">
-    <h1><a href="/robotics-for-developers/exploring-bigger-world.html">Robotics for developers: exploring a bigger world</a></h1>
+    <h1><a href="http://nicolovaligi.com/robotics-for-developers/exploring-bigger-world.html">Robotics for developers: exploring a bigger world</a></h1>
   </div>
   <div class="article_text">
     <html><body><p>In this post, we're going to finally realize the promise of SLAM and incrementally build a map of the environment. Until now, we have been bound to a single marker, so there wasn't much in the way of a map to talk about.</p>
 <p>It turns out that the SLAM system with a map is great at exploring large environments, since the structure of the factor graph allows for on-line estimation of the relative pose between all markers. Even a single frame with two visible markers allows the optimizer to "learn" their relative pose, so that either can be used for localization. Any special role for the origin marker disappears, as any other marker can be used equally well for localization.</p>
 <h2>Extending the state and the factor graph</h2>
 <p>Since the marker detector already identifies each marker using its inner bits, we can trivially extend the state whenever we observe a new marker. While looping over all detected markers, we also make sure to link the <code>MarkerFactor</code> to the correct marker state. The factor graph ends up looking something like this:</p>
-<p><a href="/robotics-for-developers/5_multiple_markers/fgraph_multimarker.pdf"><img alt="Factor graph with multiple cameras" class="img-center" src="/__pdf_previews__/robotics-for-developers/5_multiple_markers/fgraph_multimarker.pdf.png" style="max-width: 400px"/></a></p>
+<p><a href="http://nicolovaligi.com/robotics-for-developers/5_multiple_markers/fgraph_multimarker.pdf"><img alt="Factor graph with multiple cameras" class="img-center" src="http://nicolovaligi.com/__pdf_previews__/robotics-for-developers/5_multiple_markers/fgraph_multimarker.pdf.png" style="max-width: 400px"/></a></p>
 <p>In the example above, the camera only observes <em>marker 1</em> in the first frame, but both <em>marker 1</em> and <em>marker 2</em> in the second frame. The third and fourth images only see <em>marker 2</em>.</p>
 <p>At this stage, the backend SLAM optimizer could be used for "real" visual SLAM by replacing the fiducial marker frontend with one based on natural image edges and features. In this case, one tricky issue would be handling <strong>outliers</strong>: mismatched associations between points that create bad edges in the factor graph and can cause the optimizer to fail.</p>
 <h2>Missing markers</h2>
@@ -162,7 +162,7 @@ Robotics for developers: exploring a bigger world    Nicolò Valigi
   </div>
   <div class="article_meta">
     <p>Posted on: Mon 01 August 2016</p>
-    <p>Category: <a href="/category/computer-vision-robotics.html">computer-vision robotics</a>
+    <p>Category: <a href="http://nicolovaligi.com/category/computer-vision-robotics.html">computer-vision robotics</a>
     </p>
   </div>
 
