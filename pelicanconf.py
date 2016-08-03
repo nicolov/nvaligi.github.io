@@ -55,7 +55,7 @@ ARTICLE_PATHS = ['blog', 'robotics-for-developers']
 ARTICLE_EXCLUDES = ['blog/ignore']
 PAGE_PATHS = ['pages']
 EXTRA_PATH_METADATA = {
-        'extra/CNAME': {'path': 'CNAME'}
+        'extra/CNAME': {'path': 'CNAME'},
 }
 
 current_folder = os.path.dirname(os.path.abspath(__file__))
