@@ -20,4 +20,4 @@ We proceed by [adding a map]({filename}/robotics-for-developers/5_multiple_marke
 
 <!-- [finishing touch]({filename}/robotics-for-developers/6_imu/article.md) -->
 
-The [finishing touch]() adds accelerometer and gyroscope data to make the localization more robust when there's little or information from cameras.
+The [final article]({filename}/robotics-for-developers/6_imu/article.md) adds accelerometer and gyroscope data to make the localization more robust when there's little or no information from cameras.
