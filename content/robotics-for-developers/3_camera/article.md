@@ -1,4 +1,4 @@
-Title: Robotics for developers: using the camera
+Title: Robotics for developers 3/5: using the camera
 Date: 2016-07-30
 Category: computer-vision robotics
 Slug: robotics-for-developers/using-the-camera

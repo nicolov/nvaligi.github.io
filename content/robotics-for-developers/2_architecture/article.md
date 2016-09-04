@@ -1,4 +1,4 @@
-Title: Robotics for developers: architecting SLAM with ROS
+Title: Robotics for developers 2/5: architecting SLAM with ROS
 Date: 2016-07-29
 Category: computer-vision robotics
 Slug: robotics-for-developers/architecture-with-ros

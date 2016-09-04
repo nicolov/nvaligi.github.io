@@ -1,4 +1,4 @@
-Title: Robotics for developers: exploring a bigger world
+Title: Robotics for developers 5/5: exploring a bigger world
 Date: 2016-08-01
 Category: computer-vision robotics
 Slug: robotics-for-developers/exploring-bigger-world
