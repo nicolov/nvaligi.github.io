@@ -99,7 +99,7 @@ Robotics for developers 2/5: architecting SLAM with ROS    Nicolò Valigi
 </ul>
 <p>While a general SLAM system is a rather complicated affair that must be tailored its application, our project will take a few shortcuts to make the core ideas clearer.</p>
 <p>For starters, the extraction and association steps can be simplified by using man-made landmarks that can be tracked and identified easily and reliably. We're going to use <strong>fiducial markers</strong>, similar to the QR codes using for data sharing<sup id="fnref:fiducial_slam"><a class="footnote-ref" href="#fn:fiducial_slam" rel="footnote">2</a></sup>. The image below has an example of fiducial markers being used for robotics by Alphabet's Boston Dynamics:</p>
-<p><img alt="" src="http://nicolovaligi.com/robotics-for-developers/boston_dynamics.jpg"/></p>
+<p><img alt="Boston Dynamics' robots using fiducial markers" src="http://nicolovaligi.com/robotics-for-developers/boston_dynamics.jpg"/></p>
 <p>Their particular geometric shape takes care of the <em>extraction</em> problem (as it's easy to spot a black square with white borders in a natural scene), while the bits codified within the inner pattern make <em>landmark association</em> trivial.<sup id="fnref:fiducials"><a class="footnote-ref" href="#fn:fiducials" rel="footnote">3</a></sup></p>
 <p>Thanks to the error correction built into the fiducial marker library, we can assume that extraction and association are 100% reliable. However, there's always going to be numerical errors in the exact position of the marker within the camera frame.</p>
 <p>More generally, none of the sensor available for a robot could ever be perfect.

@@ -83,7 +83,7 @@ Robotics for developers: adding an accelerometer    Nicolò Valigi
     <h1><a href="http://nicolovaligi.com/robotics-for-developers/adding-accelerometer.html">Robotics for developers: adding an accelerometer</a></h1>
   </div>
   <div class="article_text">
-    <html><body><p>In a <a href="{filename}../time_evolution/article.md">previous post</a> we added multiple camera states to track the robot's movement over time. In that configuration, however, localization data is only available when a marker is captured by the camera. In this post, we'll see how adding a new sensor source can help the system localize the robot for brief periods of time even when no marker is visible.</p>
+    <html><body><p>In a <a href="http://nicolovaligi.com/robotics-for-developers/tracking-over-time.html">previous post</a> we added multiple camera states to track the robot's movement over time. In that configuration, however, localization data is only available when a marker is captured by the camera. In this post, we'll see how adding a new sensor source can help the system localize the robot for brief periods of time even when no marker is visible.</p>
 <h2>Using IMUs for navigation</h2>
 <p>An inertial measurement unit (IMUs) is a mechanical device that can measure its acceleration and angular velocity. By mounting one of these sensors on a robot, the SLAM system gains valuable information about motion, that can be used to improve localization accuracy.</p>
 <p>While there are several kinds of IMUs on the market, most robotic applications use so-called MEMS IMUs, due to their small size and limited weight. These devices include two different components: an accelerometer (to measure acceleration) and a gyroscope (to measure angular velocity).</p>
