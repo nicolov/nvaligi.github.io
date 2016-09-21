@@ -61,10 +61,12 @@ EXTRA_PATH_METADATA = {
 current_folder = os.path.dirname(os.path.abspath(__file__))
 THEME = os.path.join(current_folder, 'pelican-svbhack')
 
+PUBLICATIONS_SRC = 'content/bib.bib'
+
 SUMMARY_MAX_LENGTH = 30
 
 PLUGIN_PATHS = ['../pelican-plugins']
-PLUGINS = ["render_math", "pdf-img"]
+PLUGINS = ["render_math", "pdf-img", "pelican-cite"]
 
 # svbhack
 USER_LOGO_URL = '/blog/images/logo_white.jpg'

@@ -1,11 +1,11 @@
-Title: Robotics for developers: adding an accelerometer
+Title: Robotics for developers 6/6: adding an accelerometer
 Date: 2016-08-25
 Category: computer-vision robotics
 Slug: robotics-for-developers/adding-accelerometer
 Summary: Adding accelerometer and gyroscope allows SLAM to work even when no markers are visible.
 
 
-In a [previous post]({filename}../time_evolution/article.md) we added multiple camera states to track the robot's movement over time. In that configuration, however, localization data is only available when a marker is captured by the camera. In this post, we'll see how adding a new sensor source can help the system localize the robot for brief periods of time even when no marker is visible.
+In a [previous post]({filename}../4_time_evolution/article.md) we added multiple camera states to track the robot's movement over time. In that configuration, however, localization data is only available when a marker is captured by the camera. In this post, we'll see how adding a new sensor source can help the system localize the robot for brief periods of time even when no marker is visible.
 
 ## Using IMUs for navigation
 

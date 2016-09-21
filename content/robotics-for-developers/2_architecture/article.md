@@ -1,4 +1,4 @@
-Title: Robotics for developers 2/5: architecting SLAM with ROS
+Title: Robotics for developers 2/6: architecting SLAM with ROS
 Date: 2016-07-29
 Category: computer-vision robotics
 Slug: robotics-for-developers/architecture-with-ros
@@ -20,7 +20,7 @@ While a general SLAM system is a rather complicated affair that must be tailored
 
 For starters, the extraction and association steps can be simplified by using man-made landmarks that can be tracked and identified easily and reliably. We're going to use **fiducial markers**, similar to the QR codes using for data sharing[^fiducial_slam]. The image below has an example of fiducial markers being used for robotics by Alphabet's Boston Dynamics:
 
-![]({attach}boston_dynamics.jpg)
+![Boston Dynamics' robots using fiducial markers]({attach}boston_dynamics.jpg)
 
 Their particular geometric shape takes care of the *extraction* problem (as it's easy to spot a black square with white borders in a natural scene), while the bits codified within the inner pattern make *landmark association* trivial.[^fiducials]
 

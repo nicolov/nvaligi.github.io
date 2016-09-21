@@ -67,7 +67,7 @@ function start_up(){
   pelican_pid=$!
   echo $pelican_pid > $PELICAN_PID
 
-  $BROWSERSYNC start --server "$OUTPUTDIR" --files "$OUTPUTDIR" &
+  $BROWSERSYNC start --logLevel silent --server "$OUTPUTDIR" --files "$OUTPUTDIR" &
   srv_pid=$!
   echo $srv_pid > $SRV_PID
 
