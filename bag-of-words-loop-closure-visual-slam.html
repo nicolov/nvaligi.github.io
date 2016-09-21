@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- ## for client-side less
+  <link rel="stylesheet/less" type="text/css" href="http://nicolovaligi.com/theme/css/style.less">
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
+  -->
+  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Nicolò Valigi">
+  <meta name="description" content="Posts and writings by Nicolò Valigi">
+
+
+<meta name="keywords" content="">
+
+  <title>
+Simple bag-of-words loop closure for visual SLAM    Nicolò Valigi
+  </title>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-67820015-1', 'auto');
+  ga('send', 'pageview');
+
+</script></head>
+
+<body>
+  <aside>
+    <div id="user_meta">
+      <a href="http://nicolovaligi.com">
+        <img src="/blog/images/logo_white.jpg" alt="logo">
+      </a>
+      <h2><a href="http://nicolovaligi.com">Nicolò Valigi</a></h2>
+      <p>Chronicles of (constant) learning.</p>
+      <ul class="links">
+        <li><a href="http://nicolovaligi.com/pages/tutorial-on-robotics-for-developers.html">Tutorial on robotics for developers</a></li>
+      </ul>
+
+      <ul style="padding-left: 0;
+                 margin-left: -5px;
+                 list-style: none;
+                 text-align: center;">
+        <li>
+            <a href="https://github.com/nicolov">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+        <li>
+            <a href="mailto:nicolo.valigi@gmail.com">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-envelope fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+    </ul>
+
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <p>
+      <a href="http://nicolovaligi.com">Index</a> &brvbar; <a href="http://nicolovaligi.com/archives.html">Archives</a>
+      </p>
+    </header>
+
+<article>
+  <div class="article_title">
+    <h1><a href="http://nicolovaligi.com/bag-of-words-loop-closure-visual-slam.html">Simple bag-of-words loop closure for visual SLAM</a></h1>
+  </div>
+  <div class="article_text">
+    <html><body><p>This post goes through the theory and implementation of a simple algorithm for loop closure detection in visual SLAM. The code is available <a href="https://github.com/nicolov/simple_slam_loop_closure">on my Github</a>.</p>
+<p>As part of my research in <a href="http://nicolovaligi.com/deep-learning-robotics-slam.html">using deep learning for SLAM</a>, I found that <em>loop closure detection</em> would be a promising first application, due to its similarity to well-studied image classification problems. Before going ahead, I wanted to implement a baseline solution using "conventional" computer vision techniques. The following post describes the code I ended up implementing, based on the image description subsystem in <a href="https://github.com/raulmur/ORB_SLAM2">ORB-SLAM2</a>.</p>
+<h2>Goals</h2>
+<p>The main goal in loop closure is being able to detect when the robot is observing a previously-explored scene, so that additional constraints can be added to the map. As the number of frames grows, the naive solution quickly becomes computationally intractable. Instead of directly comparing pixel values, a better idea is to build a <em>compact description</em> of each scene that can be handled faster.</p>
+<p><img alt="Building a compact vector representation for images." class="img-center" src="http://nicolovaligi.com/image_reprs.png" style="max-width: 600px"/></p>
+<p>AThese descriptions should be designed so that vector distance in the descriptions space is equivalent to similarity in the image space. For optimum performance, the vectors should also be robust to illumination or slight viewpoint changes.</p>
+<p>There's also a huge body of work on data structures that can be used to efficiently query vector descriptors. We won't be covering those here, since these techniques are applicable to any image descriptor.</p>
+<p>To recap, we are looking for the following properties:</p>
+<ul>
+<li>
+<p>descriptors should be quick to compute and take up little memory;</p>
+</li>
+<li>
+<p>distance in the descriptors vector space should map to image similarity, so that similar scenes can be found by simply computing the vector distance;</p>
+</li>
+<li>
+<p>descriptors should be robust under illumination or viewpoint changes.</p>
+</li>
+</ul>
+<h2>Bag of words representations</h2>
+<p>We start by picking hundreds of interest points (<strong>features</strong>) throughout the image and extracting their representations using one of the available <em>feature descriptors</em>. For this, we can use the SURF descriptor available in OpenCV:</p>
+<pre><code class="cpp">
+// This vector will hold the detected keypoints
+vector&lt;cv::KeyPoint&gt; keypoints;
+
+// This vector will hold their vector descriptors
+vector&lt;float&gt; descriptors;
+
+surf_detector-&gt;detectAndCompute(
+    image, cv::Mat(), keypoints, descriptors);
+
+</code></pre>
+<p>Directly using the <code>vector&lt;float&gt;</code> as the image representation is not a good idea, since it takes up a lot of space and does not generalize well to new images. To compress it, we borrow an idea from text processing: the <strong>(Visual) Bag of Words (BoW)</strong> representation. First, he feature descriptors are clustered around the words in a <em>visual vocabulary</em>. The clustering reduces the problem to a matter of <strong>counting</strong> how many times each word in the vocabulary occurs in the original <code>vector&lt;float&gt;</code>. Finally, the image can be represented using the resulting <strong>histogram</strong> of frequencies, as shown in the following diagram:</p>
+<p><img alt="BoW representation" class="img-center" src="http://nicolovaligi.com/bag_of_words.png" style="max-width: 600px"/></p>
+<p>The vocabulary is trained beforehand using k-means clustering and a large dataset of images.</p>
+<h2>Testing on a real dataset</h2>
+<p>The <a href="http://www.robots.ox.ac.uk/~mobile/IJRR_2008_Dataset/">"New College" dataset</a> from the authors of FAB-MAP is a great dataset to use for benchmarking SLAM loop closure, since it provides ground-truth scene correspondences kindly contributed by humans.</p>
+<p>For the implementation, I've used OpenCV and the <a href="https://github.com/dorian3d/DBoW2">DBoW2 library</a> that's also used by ORB-SLAM2. I've set up a simple C++ project <a href="https://github.com/nicolov/simple_slam_loop_closure">here</a> that loads the images and computes the image-level similarity.</p>
+<p>To compare the performance of the program to ground-truth, we can define a <strong>confusion matrix</strong>, whose element <span class="math">\(i,j\)</span> is defined as the vector distance between the representations of images <span class="math">\(i\)</span> and <span class="math">\(j\)</span>. Small values of <span class="math">\(C_{i,j}\)</span> mean that the images <span class="math">\(i\)</span> and <span class="math">\(j\)</span> are similar and thus potential loop closure candidates. That's what we get by plotting the confusion matrices side by side:</p>
+<p><img alt="Confusion matrix compared to ground truth" class="img-center" src="http://nicolovaligi.com/confusion_matrix.png" style="max-width: 500px"/></p>
+<p>As expected, the BoW-based confusion matrix is fuzzier than the binary ground-truth, but still matches quite well. In real applications, these raw scores are post-processed to reduce false positives. For example, geometric and visibility constraints can be used to exclude some candidates and improve the reliability of the system. These techniques can be applied to any descriptor though, so discussing them is out of topic when it comes to BoW.aed&lt;e</p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    var location_protocol = (false) ? 'https' : document.location.protocol;
+    if (location_protocol !== 'http' && location_protocol !== 'https') location_protocol = 'https:';
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = location_protocol + '//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+    mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script></body></html>
+  </div>
+  <div class="article_meta">
+    <p>Posted on: Sun 18 September 2016</p>
+    <p>Category: <a href="http://nicolovaligi.com/category/2016-09-18-simple-loop-closure.html">2016-09-18-simple-loop-closure</a>
+    </p>
+  </div>
+
+
+</article>
+
+
+    <div id="ending_message">
+      <p>&copy; Nicolò Valigi. Built using <a href="http://getpelican.com" target="_blank">Pelican</a>. Theme originally by Giulio Fidente on <a href="https://github.com/gfidente/pelican-svbhack" target="_blank">github</a>. </p>
+    </div>
+  </main>
+</body>
+</html>
