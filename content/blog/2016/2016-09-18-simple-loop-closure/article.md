@@ -3,6 +3,8 @@ Date: 2016-09-18
 Slug: bag-of-words-loop-closure-visual-slam
 Summary: Theory and implementation of a simple algorithm to test visual SLAM loop closure on the New College dataset.
 
+<small>**Edit:** I added some code and info on the *precision-recall* curve that is usually used to evaluate this sort of classification algorithms.</small>
+
 This post goes through the theory and implementation of a simple algorithm for loop closure detection in visual SLAM. The code is available [on my Github](https://github.com/nicolov/simple_slam_loop_closure).
 
 As part of my research in [using deep learning for SLAM]({filename}/blog/2016/2016-09-15-how-can-deep-learning-help-slam.md), I found that *loop closure detection* would be a promising first application, due to its similarity to well-studied image classification problems. Before going ahead, I wanted to implement a baseline solution using "conventional" computer vision techniques. The following post describes the code I ended up implementing, based on the image description subsystem in [ORB-SLAM2](https://github.com/raulmur/ORB_SLAM2).
@@ -59,4 +61,30 @@ To compare the performance of the program to ground-truth, we can define a **con
 
 <img src="{attach}confusion_matrix.png" class="img-center" alt="Confusion matrix compared to ground truth" style="max-width: 500px"/>
 
-As expected, the BoW-based confusion matrix is fuzzier than the binary ground-truth, but still matches quite well. In real applications, these raw scores are post-processed to reduce false positives. For example, geometric and visibility constraints can be used to exclude some candidates and improve the reliability of the system. These techniques can be applied to any descriptor though, so discussing them is out of topic when it comes to BoW.aed<e
+As expected, the BoW-based confusion matrix is fuzzier than the binary ground-truth, but still matches quite well. In real applications, these raw scores would be post-processed to reduce false positives. For example, geometric and visibility constraints can be used to exclude some candidates and improve the reliability of the system. These techniques can be applied to any descriptor though, so discussing them is out of topic when it comes to BoW representations.
+
+## The precision-recall curve
+
+Watching fuzzy dots on an heatmap is obviously not the best way to evaluate loop closure. Since loop closure can naturally be framed as a **classification problem**, we can plot a **precision-recall curve** (PR curve) to better quantify the performance of the system.
+
+The PR curve highlights the tradeoff between *precision* (absence of false positives in the detection) and *recall* (prediction power). As expected, tweaking the algorithm to improve recall usually leads to more false positives due to the increased sensitivity to similarities in the image.
+
+In the context of loop closure, these quantities can be computed as follows:
+
+$$
+\textrm{precision} = \frac{\textrm{Number of correctly detected closures}}{\textrm{Number of reported closures}}
+$$
+
+$$
+\textrm{recall} = \frac{\textrm{Number of correctly detected closures}}{\textrm{True number of closures in the ground truth}}
+$$
+
+Precision and recall are usually plotted on the x and y axes of a scatter plot to highlight their inverse relationship:
+
+<img src="{attach}prec_recall_curve.png" class="img-center" alt="Precision-recall curve for the BoW approach" style="max-width: 500px"/>
+
+In this case, I explored the PR tradeoff by changing the threshold value applied to the scalar distance computed between BoW representations. Lowering the threshold makes the system more liberal in reporting loop closures, leading to higher recall but correspondingly low precision (loads of false positives).
+
+## Conclusions
+
+This simple vision-only system performs pretty badly and would definitely need help from geometric and temporal constraints to use in a real SLAM system. However, it will be an useful benchmark for further research.

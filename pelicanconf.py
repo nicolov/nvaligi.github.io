@@ -42,7 +42,7 @@ MENUITEMS = (
 LINKS = []
 SOCIAL = []
 
-DEFAULT_PAGINATION = 10
+DEFAULT_PAGINATION = 11
 
 # This will get over-written by publishconf.py
 RELATIVE_URLS = True
@@ -66,8 +66,11 @@ PUBLICATIONS_SRC = 'content/bib.bib'
 SUMMARY_MAX_LENGTH = 30
 
 PLUGIN_PATHS = ['../pelican-plugins']
-PLUGINS = ["render_math", "pdf-img", "pelican-cite"]
+PLUGINS = ["render_math", "pdf-img", "pelican-cite", "ipynb.markup"]
 
 # svbhack
 USER_LOGO_URL = '/blog/images/logo_white.jpg'
 TAGLINE = """Chronicles of (constant) learning."""
+
+# Get ipython notebooks summary from the meta file
+IPYNB_USE_META_SUMMARY = True
