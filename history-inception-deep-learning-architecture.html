@@ -84,34 +84,34 @@ Short history of the Inception deep learning architecture    Nicolò Valigi
   </div>
   <div class="article_text">
     <html><body><p>While looking for pretrained CNN models, I was starting to get confused about the different iterations of Google's <em>Inception</em> architecture. This short post recaps the two intense years of life of this (groundbreaking) model. I assume a pretty thorough understanding of the machinery of CNNs (a good resource for those concepts is <a href="http://cs231n.github.io/convolutional-networks/">here</a>).</p>
-<h2>Network In Network, Lin et al. (2014)</h2>
+<h3>Network In Network, Lin et al. (2014)</h3>
 <p><img alt="Network In Network." class="img-center" src="http://nicolovaligi.com/network_in_network.png" style="max-width: 500px"/></p>
 <p><a href="https://arxiv.org/pdf/1312.4400v3.pdf">paper</a></p>
 <p>To the best of my knowledge, this paper really kicked off the whole "Inception" thing. The key insight was to realize that conventional convolutional "filters" can only learn linear functions of their inputs. Why not increase their learning abilities and abstraction power by having more complex "filters"? This paper gets rid of the linear convolutions that are the bread and butter of CNNs and instead connects convolutional layers through multi-layer perceptrons that can learn non-linear functions. Luckily, it turns out that these perceptrons are <strong>mathematically equivalent to 1x1 convolutions</strong>, and thus fit neatly within the CNN framework.</p>
 <p>The second major achievement is that the increased abstraction power of these convolutional layers can lessen the need for fully connected (FC) layers at the top of the network. Instead, they spatially average the <em>feature maps</em> at the final layer, and directly feed these vectors to the softmax classifier. Getting rid of the FC layer cuts the number of parameters, and thus reduces the risk of overfitting and the computational load. The authors call this <strong>global average pooling</strong> and claim that it also improves robustness to spatial translation.</p>
-<h2>Going deeper with convolutions, Szegedy et al. (2014)</h2>
+<h3>Going deeper with convolutions, Szegedy et al. (2014)</h3>
 <p><img alt="The Inception module." class="img-center" src="http://nicolovaligi.com/inception_module.png" style="max-width: 500px"/></p>
 <p><a href="https://arxiv.org/pdf/1409.4842v1.pdf">paper</a></p>
 <p>This paper introduces the <strong>Inception v1</strong> architecture, implemented in the winning ILSVRC 2014 submission <strong>GoogLeNet</strong>. The main contribution with respect to Network in Network is the application to the deeper nets needed for image classification. From a theoretical point of view, Google's researchers observed that some sparsity would be beneficial to the network's performance, and implemented it using today's computing techniques.</p>
 <p>To improve convergence on this relatively deep network, the authors also introduced additional losses tied to the classification error of intermediate layers. This trick is only used for training, and the output of these layers is discarded during inference.</p>
-<h2>Rethinking the inception architecture for computer vision, Szegedy et al. (2015)</h2>
+<h3>Rethinking the inception architecture for computer vision, Szegedy et al. (2015)</h3>
 <p><img alt="Replacing convolutions." class="img-center" src="http://nicolovaligi.com/replacing_convolutions.png" style="max-width: 250px"/></p>
 <p><a href="https://arxiv.org/pdf/1512.00567v3.pdf">paper</a></p>
 <p>Authored by the same group of people as the original Inception, this work builds on the original and describes some decisions and tricks that led to its success. For example, the authors show how any convolution whose kernel is larger than 3x3 can be expressed more efficiently with a series of smaller convolutions. Even more, they suggest replacing large 7x7 filters with a pair of 1x7 and 7x1 convolutional layers.</p>
 <p>The paper then goes through several iterations of the <strong>Inception v2</strong> network that adopt the tricks discussed above (for example, factorization of convolutions and improved normalization).</p>
 <p>By applying all these tricks on the same net, we finally get <strong>Inception v3</strong>, handily surpassing its ancestor GoogLeNet on the ImageNet benchmark.</p>
-<h2>v4: Inception-v4, Inception-ResNet and the Impact of Residual Connections on Learning, Szegedy et al. (2016)</h2>
+<h3>v4: Inception-v4, Inception-ResNet and the Impact of Residual Connections on Learning, Szegedy et al. (2016)</h3>
 <p><a href="https://arxiv.org/pdf/1602.07261v2.pdf">paper</a></p>
 <p>This paper introduces <strong>Inception v4</strong>, a streamlined version of v3 with a more uniform architecture and better recognition performance. Also, the authors develop <em>residual connection</em> variants of both Inception architectures (<strong>Inception-ResNet v1 and v2</strong>) to speed up training.</p>
-<h2>Conclusion and pretrained models</h2>
+<h3>Conclusion and pretrained models</h3>
 <p>After the initial breakthrough of the Inception architecture, most changes have been incremental. This means that any of these models would be good enough for initial work in new research areas outside of classification.</p>
 <p>Inception-v3 pretrained weights are widely available, both in <a href="https://keras.io/applications/">Keras</a> and <a href="https://github.com/tensorflow/models/tree/master/inception">Tensorflow</a>. I couldn't find weights for Inception v4, but there are a few implementations of the network already, so it's only a matter of time before someone burns through a few hundred of Kwh to train them.</p>
-<h2>Other resources</h2>
+<h4>Other resources</h4>
 <p><a href="http://lsun.cs.princeton.edu/slides/Christian.pdf">Some slides</a> about using Inception-style architectures for <em>scene</em> classification and recognition.</p></body></html>
   </div>
   <div class="article_meta">
-    <p>Posted on: Tue 11 October 2016</p>
-    <p>Category: <a href="http://nicolovaligi.com/category/2016-10-11-history-inception.html">2016-10-11-history-inception</a>
+    <p>Posted on: Mon 10 October 2016</p>
+    <p>Category: <a href="http://nicolovaligi.com/category/2016-10-10-history-inception.html">2016-10-10-history-inception</a>
     </p>
   </div>
 

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- ## for client-side less
+  <link rel="stylesheet/less" type="text/css" href="http://nicolovaligi.com/theme/css/style.less">
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
+  -->
+  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Nicolò Valigi">
+  <meta name="description" content="Posts and writings by Nicolò Valigi">
+
+
+<meta name="keywords" content="">
+
+  <title>
+Reading list for Udacity self-driving car challenge #3    Nicolò Valigi
+  </title>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-67820015-1', 'auto');
+  ga('send', 'pageview');
+
+</script></head>
+
+<body>
+  <aside>
+    <div id="user_meta">
+      <a href="http://nicolovaligi.com">
+        <img src="/blog/images/logo_white.jpg" alt="logo">
+      </a>
+      <h2><a href="http://nicolovaligi.com">Nicolò Valigi</a></h2>
+      <p>Chronicles of (constant) learning.</p>
+      <ul class="links">
+        <li><a href="http://nicolovaligi.com/pages/tutorial-on-robotics-for-developers.html">Tutorial on robotics for developers</a></li>
+      </ul>
+
+      <ul style="padding-left: 0;
+                 margin-left: -5px;
+                 list-style: none;
+                 text-align: center;">
+        <li>
+            <a href="https://github.com/nicolov">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+        <li>
+            <a href="mailto:nicolo.valigi@gmail.com">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-envelope fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+    </ul>
+
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <p>
+      <a href="http://nicolovaligi.com">Index</a> &brvbar; <a href="http://nicolovaligi.com/archives.html">Archives</a>
+      </p>
+    </header>
+
+<article>
+  <div class="article_title">
+    <h1><a href="http://nicolovaligi.com/reading-list-udacity-self-driving-challenge-3.html">Reading list for Udacity self-driving car challenge #3</a></h1>
+  </div>
+  <div class="article_text">
+    <p>As part of their <a href="https://www.udacity.com/self-driving-car">open-source self driving car</a> project, Udacity has been releasing a series of challenges to encourage community participation. <a href="https://medium.com/udacity/challenge-3-image-based-localization-5d9cadcff9e7">Challenge #3</a> seems interesting and fits right into a lot of current research in Deep Learning I was reading about.</p>
+<h3>The challenge</h3>
+<blockquote>
+<p>You will need to build a pipeline that can take a frame from our dashboard camera, process it, and compare it to a database of previous drives.</p>
+</blockquote>
+<p>Given that testing will happen on individual frames, not on a sequence, conventional SLAM approaches will be of limited use. Instead, we'll have to focus on the <strong>relocalization</strong> and <strong>place recognition</strong> tasks. In literature, this is sometimes called the <strong>kidnapped robot</strong> problem.</p>
+<p>I think it's most natural to lean towards a Deep Learning solution, since so many other perception subsystems already rely on it. However, I've also included a few references to <em>conventional</em> approaches with hand-crafted visual features and algorithms.</p>
+<h3>Deep learning approaches</h3>
+<p>This is a list of <strong>deep learning</strong> based approaches, ordered by increasing sophistication:</p>
+<hr>
+
+<p><em>Chen, Z., Lam, O., Jacobson, A., &amp; Milford, M. (2013). Convolutional Neural Network-based Place Recognition</em></p>
+<p>This is the first attempt at using CNN-based features for place recognition, based on a pretrained Overfeat network. Unfortunately, the authors only evaluate a complete system that includes sequence matching and spatial consistency heuristics. It's thus hard to gauge just how well this specific network performs.</p>
+<hr>
+
+<p><em>Sünderhauf, N., Shirazi, S., Dayoub, F., Upcroft, B., &amp; Milford, M. (2015). On the performance of ConvNet features for place recognition</em></p>
+<p>This paper tackles the same problem and offers several interesting improvements:</p>
+<ul>
+<li>
+<p>clean separation between feature extraction and matching;</p>
+</li>
+<li>
+<p>comparison of different ConvNets (AlexNet trained for either object recognition and on the <em>Places</em> dataset)</p>
+</li>
+<li>
+<p>different datasets with good mix of appearance changes (winter/summer), viewpoint changes, and both.</p>
+</li>
+<li>
+<p>algorithms that allow real-time operation by leveraging higher-level representations in ConvNets.</p>
+</li>
+</ul>
+<hr>
+
+<p><em>Niko, S., Shirazi, S., Jacobson, A., Dayoub, F., Pepperell, E., Upcroft, B., &amp; Milford, M. (2015). Place Recognition with ConvNet Landmarks: Viewpoint-Robust, Condition-Robust, Training-Free.</em></p>
+<p>The key insight here is to couple CNN-based feature descriptors with a landmark extraction module that selects regions of the image that are most likely good landmarks. By using landmark regions instead of the full image, the system gains in robustness against view point changes. As described here, the pipeline is really slow since CNN inference runs once for each of the extracted landmarks (50-100/image). Also, this approach still has no notion of <em>metricity</em> (i.e. it only looks at similarity in the image space, not in the real world).</p>
+<hr>
+
+<p><em>Kendall, A., Grimes, M., &amp; Cipolla, R. (2015). PoseNet: A Convolutional Network for Real-Time 6-DOF Camera Relocalization</em></p>
+<p>This is the first <strong>regressor</strong> for the camera pose, as opposed to the relocalization approaches described above. Again, it heavily leans on transfer learning and leverages a pre-trained GoogLeNet for scene descriptors. Compared to conventional SLAM, this approach does not need a growing landmark map, but embeds knowledge within the trained network. Compared to previous DL works, it outputs a continuous pose rather than a choice between existing viewpoints.</p>
+<p>The authors also present an interesting analysis of learnt features and note how the network even learns to infer knowledge from largely textureless regions that are not used in conventional descriptor-based SLAM.</p>
+<h3>"Conventional" approaches</h3>
+<p>Here, I list non-DL approaches with open-source implementations. The body of research is much larger, but also more consolidated and mature.</p>
+<hr>
+
+<p><em>Cummins, M., &amp; Newman, P. (2008). FAB-MAP: Probabilistic Localization and Mapping in the Space of Appearance.</em></p>
+<p>This paper leverages a <a href="http://nicolovaligi.com/bag-of-words-loop-closure-visual-slam.html">bag of words</a> representation and Bayesian techniques to solve place recognition. This approach is commonly used as a benchmark (including in some of the papers above), and there are open-source implementations available.</p>
+<hr>
+
+<p><em>Mur-Artal, R., Montiel, J. M. M., &amp; Tardos, J. D. (2015). ORB-SLAM: A Versatile and Accurate Monocular SLAM System</em></p>
+<p>ORB-SLAM is an open-source SLAM system that is very competitive in large-scale scenarios. Its <em>kidnapped robot</em> module is based on ORB (binary) features and a bag-of-words approach for whole-image description.</p>
+<hr>
+
+<p><em>Shotton, J., Glocker, B., Zach, C., Izadi, S., Criminisi, A., &amp; Fitzgibbon, A. (2013). Scene coordinate regression forests for camera relocalization in RGB-D images.</em></p>
+<p>This is probably the state of the art in non-DL relocalization techniques. Unlike most other approaches, it doesn't use local feature descriptors, but learns a probability didstribution for each pixel. Unfortunately, it scales poorly with workspace size and needs depth information that is usually not available in outdoor scenes.</p>
+  </div>
+  <div class="article_meta">
+    <p>Posted on: Wed 12 October 2016</p>
+    <p>Category: <a href="http://nicolovaligi.com/category/2016.html">2016</a>
+    </p>
+  </div>
+
+
+</article>
+
+
+    <div id="ending_message">
+      <p>&copy; Nicolò Valigi. Built using <a href="http://getpelican.com" target="_blank">Pelican</a>. Theme originally by Giulio Fidente on <a href="https://github.com/gfidente/pelican-svbhack" target="_blank">github</a>. </p>
+    </div>
+  </main>
+</body>
+</html>
