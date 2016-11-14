@@ -2,6 +2,7 @@ Title: Car speed estimation from a windshield camera
 Date: 2016-11-01
 Category: computer vision, self-driving car
 Slug: car-speed-estimation-windshield-camera
+Summary: Car speed estimation from a windshield camera
 
 Measuring the speed of car by capturing images from a windshield camera is a
 seemingly easy computer vision problem that actually isn't.
@@ -139,4 +140,4 @@ I should also implement outlier rejection for the flow vectors, as that should
 reduce noise and allow reducing the strength of the low-pass filter to speed up
 the dynamic response. Some more improvement ideas are described in [@Barbosa2007].
 
-Again, the code for this lives [here on Github](https://gist.github.com/nicolov/d010233ea8d35887c6ab47cca97d396f).
+Again, the code for this lives [on Github](https://gist.github.com/nicolov/d010233ea8d35887c6ab47cca97d396f).
