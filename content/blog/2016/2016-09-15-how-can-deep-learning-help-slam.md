@@ -2,6 +2,7 @@ Title: How can Deep Learning help Robotics and SLAM
 Date: 2016-09-15
 Slug: deep-learning-robotics-slam
 Summary: A review of potential synergies between Deep Learning and visual SLAM for Autonomous Robotics.
+Tags: deep learning, robotics
 
 By now, Deep Learning needs no introduction for most people in the tech community. Powered by massively parallel GPUs and hundreds of research teams around the world, neural networks have taken the machine learning community by storm in the last few years. Convolutional networks have won [image classification competitions](https://en.wikipedia.org/wiki/ImageNet) since 2010, [recurrent networks](https://www.tensorflow.org/versions/r0.10/tutorials/recurrent/index.html) are incredible at modeling and understanding human language, and deep nets can even [compose music](https://deepmind.com/blog/wavenet-generative-model-raw-audio/) after listening to Mozart for a while.
 

@@ -1,6 +1,6 @@
 Title: Robotics for developers 4/6: tracking the robot over time
 Date: 2016-07-31
-Category: computer-vision robotics
+Tags: robotics, perception
 Slug: robotics-for-developers/tracking-over-time
 Summary: Extending the SLAM system to track multiple positions of the robot.
 

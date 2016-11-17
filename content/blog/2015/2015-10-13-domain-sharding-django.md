@@ -1,8 +1,8 @@
 Title: Domain sharding in Django
 Date: 2015-10-13
-Category: web, backend, django
 Slug: domain-sharding-django
 Summary: Speeding up media delivery in Django by sharding requests across multiple CDN domains.
+Tags: backend, django
 
 It's 2015. Static files should be served by a CDN. Period. This has several advantages, the most obvious being:
 

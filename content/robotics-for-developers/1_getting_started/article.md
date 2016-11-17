@@ -1,6 +1,6 @@
 Title: Robotics for developers 1/6: getting started
 Date: 2016-07-28
-Category: computer-vision robotics
+Tags: robotics, perception
 Slug: robotics-for-developers/getting-started
 Summary: This post is the introduction to a series on programming autonomous robots aimed at developers with no background in computer vision or robotics.
 

@@ -1,6 +1,6 @@
 Title: Robotics for developers 3/6: using the camera
 Date: 2016-07-30
-Category: computer-vision robotics
+Tags: robotics, perception
 Slug: robotics-for-developers/using-the-camera
 Summary: Delving into computer vision to learn how to use fiducial markers for localization.
 

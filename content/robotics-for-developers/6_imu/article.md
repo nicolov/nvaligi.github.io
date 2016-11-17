@@ -1,6 +1,6 @@
 Title: Robotics for developers 6/6: adding an accelerometer
 Date: 2016-08-25
-Category: computer-vision robotics
+Tags: robotics, perception
 Slug: robotics-for-developers/adding-accelerometer
 Summary: Adding accelerometer and gyroscope allows SLAM to work even when no markers are visible.
 

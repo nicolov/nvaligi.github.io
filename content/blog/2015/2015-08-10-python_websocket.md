@@ -1,6 +1,6 @@
 Title: Automatic reconnection of Websockets in Autobahn
 Date: 2015-08-10
-Category: web, backend, python
+Tags: backend, python
 Slug: automatic-reconnection-websockets-autobahn
 Summary: Websockets are an useful technology with lots of applications. Let's make them more reliable by detecting dropped connections and automatically re-creating them. We use Python and the Autobahn library.
 

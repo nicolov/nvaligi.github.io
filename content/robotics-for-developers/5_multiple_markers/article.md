@@ -1,6 +1,6 @@
 Title: Robotics for developers 5/6: exploring a bigger world
 Date: 2016-08-01
-Category: computer-vision robotics
+Tags: robotics, perception
 Slug: robotics-for-developers/exploring-bigger-world
 Summary: Recognizing multiple markers makes the SLAM system more useful in larger environments.
 

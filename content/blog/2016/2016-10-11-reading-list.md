@@ -1,6 +1,7 @@
 Title: Reading list for Udacity self-driving car challenge #3
 Date: 2016-10-12
 Slug: reading-list-udacity-self-driving-challenge-3
+Tags: self-driving cars, computer vision
 
 As part of their [open-source self driving car](https://www.udacity.com/self-driving-car) project, Udacity has been releasing a series of challenges to encourage community participation. [Challenge #3](https://medium.com/udacity/challenge-3-image-based-localization-5d9cadcff9e7) seems interesting and fits right into a lot of current research in Deep Learning I was reading about.
 

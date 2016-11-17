@@ -2,6 +2,7 @@ Title: Simple bag-of-words loop closure for visual SLAM
 Date: 2016-09-18
 Slug: bag-of-words-loop-closure-visual-slam
 Summary: Theory and implementation of a simple algorithm to test visual SLAM loop closure on the New College dataset.
+Tags: computer vision, robotics
 
 <small>**Edit:** I added some code and info on the *precision-recall* curve that is usually used to evaluate this sort of classification algorithms.</small>
 

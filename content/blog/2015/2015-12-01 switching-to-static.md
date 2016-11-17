@@ -1,8 +1,8 @@
 Title: Building static sites with Django
 Date: 2015-12-01
-Category: web, backend, django
 Slug: switch-static-site-for-side-projects
 Summary: How a few lines can transform a Django web-app into a static site that's fast and easy to host.
+Tags: backend, django
 
 Using Django to build lighting fast static sites that are easy to deploy.
 

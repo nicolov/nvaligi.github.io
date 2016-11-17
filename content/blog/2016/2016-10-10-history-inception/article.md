@@ -2,6 +2,7 @@ Title: Short history of the Inception deep learning architecture
 Date: 2016-10-10
 Slug: history-inception-deep-learning-architecture
 Summary: A quick history of the evolution of the very successful concepts behing
+Tags: deep learning, computer vision
 
 While looking for pretrained CNN models, I was starting to get confused about the different iterations of Google's *Inception* architecture. This short post recaps the two intense years of life of this (groundbreaking) model. I assume a pretty thorough understanding of the machinery of CNNs (a good resource for those concepts is [here](http://cs231n.github.io/convolutional-networks/)).
 

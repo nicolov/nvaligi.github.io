@@ -1,6 +1,6 @@
 Title: Robotics for developers 2/6: architecting SLAM with ROS
 Date: 2016-07-29
-Category: computer-vision robotics
+Tags: robotics, perception
 Slug: robotics-for-developers/architecture-with-ros
 Summary: Introducing a mix of the computer science, physics, and computer vision that will be used for the project.
 

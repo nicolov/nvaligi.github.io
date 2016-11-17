@@ -1,8 +1,8 @@
 Title: Phoenix WebSockets from the ground up
 Date: 2016-05-31
-Category: elixir
 Slug: phoenix-websockets-ground-up
 Summary: A look at the internals of Websockets support in the Phoenix web framework on Elixir.
+Tags: backend, elixir, phoenix
 
 Inspired by the [Phoenix is not your
 application](http://youtube.com/watch?v=IDKCSheBc-8) presentation, I dug into

@@ -2,6 +2,7 @@ Title: Open source Visual SLAM evaluation
 Date: 2016-09-01
 Slug: open-source-visual-slam-evaluation
 Summary: We compare a few open-source visual navigation systems on real-life data and discuss their pros and cons from a practical point of view.
+Tags: computer vision, robotics, SLAM
 
 Navigation is a critical component of just any autonomous system, and cameras are a wonderfully cheap way of addressing this need. From among the dozens of open-source packages shared by researchers worldwide, I've picked a few promising ones and benchmarked them against a **indoor drone** dataset. The results will be useful to hackers and DIYers that want to add localization capabilities to their drone or autonomous vehicle. All the code I used for running the tests, benchmarking, and plotting the results is available [on my Github](https://github.com/nicolov/vslam_evaluation).
 

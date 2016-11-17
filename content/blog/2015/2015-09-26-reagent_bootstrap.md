@@ -1,8 +1,8 @@
 Title: Using (React) Bootstrap components in Reagent
 Date: 2015-09-26
-Category: programming
 Slug: boostrap-components-reagent-clojurescript
 Summary: A quick note on how to wrap React to easily add Bootstrap components to a Reagent/Clojurescript web application
+Tags: frontend, clojurescript, react
 
 ## ClojureScript and Reagent
 

@@ -1,8 +1,8 @@
 Title: SQLAlchemy queries in Django
 Date: 2015-10-02
-Category: web, backend, django
 Slug: sql-alchemy-queries-in-django
 Summary: Let's look at a simple way to run SQLAlchemy queries inside Django's request/response cycle.
+Tags: backend, django
 
 Django's ORM is great for 99% of the common web development use cases. Every now and then, however, a bit more flexibility would go a long way and help stay out of the raw SQL rabbit hole. For example, reporting queries are difficult to build with Django's API and could benefit from a little more abstraction.
 

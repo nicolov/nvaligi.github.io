@@ -1,6 +1,6 @@
 Title: Car speed estimation from a windshield camera
 Date: 2016-11-01
-Category: computer vision, self-driving car
+Tags: computer vision, self-driving cars
 Slug: car-speed-estimation-windshield-camera
 Summary: Car speed estimation from a windshield camera
 
