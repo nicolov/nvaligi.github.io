@@ -17,7 +17,7 @@
   <meta name="description" content="Posts and writings by Nicolò Valigi">
 
 
-<meta name="keywords" content="">
+<meta name="keywords" content="deep learning, robotics">
 
   <title>
 How can Deep Learning help Robotics and SLAM    Nicolò Valigi
@@ -74,7 +74,9 @@ How can Deep Learning help Robotics and SLAM    Nicolò Valigi
   <main>
     <header>
       <p>
-      <a href="http://nicolovaligi.com">Index</a> &brvbar; <a href="http://nicolovaligi.com/archives.html">Archives</a>
+      <a href="http://nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/archives.html">Archives</a>
       </p>
     </header>
 
@@ -83,7 +85,7 @@ How can Deep Learning help Robotics and SLAM    Nicolò Valigi
     <h1><a href="http://nicolovaligi.com/deep-learning-robotics-slam.html">How can Deep Learning help Robotics and SLAM</a></h1>
   </div>
   <div class="article_text">
-    <html><body><p>By now, Deep Learning needs no introduction for most people in the tech community. Powered by massively parallel GPUs and hundreds of research teams around the world, neural networks have taken the machine learning community by storm in the last few years. Convolutional networks have won <a href="https://en.wikipedia.org/wiki/ImageNet">image classification competitions</a> since 2010, <a href="https://www.tensorflow.org/versions/r0.10/tutorials/recurrent/index.html">recurrent networks</a> are incredible at modeling and understanding human language, and deep nets can even <a href="https://deepmind.com/blog/wavenet-generative-model-raw-audio/">compose music</a> after listening to Mozart for a while.</p>
+    <p>By now, Deep Learning needs no introduction for most people in the tech community. Powered by massively parallel GPUs and hundreds of research teams around the world, neural networks have taken the machine learning community by storm in the last few years. Convolutional networks have won <a href="https://en.wikipedia.org/wiki/ImageNet">image classification competitions</a> since 2010, <a href="https://www.tensorflow.org/versions/r0.10/tutorials/recurrent/index.html">recurrent networks</a> are incredible at modeling and understanding human language, and deep nets can even <a href="https://deepmind.com/blog/wavenet-generative-model-raw-audio/">compose music</a> after listening to Mozart for a while.</p>
 <p>Applications of Deep Learning (DL) to autonomous robots are still not as widespread as these more well-known problems listed above. In this article, I'm going to focus on one such area and review the literature on Deep Learning as applied to a crucial problem in perception: Simultaneous Localization and Mapping (SLAM).</p>
 <h2>State of the (SLAM) art</h2>
 <p>A majority of SLAM systems share several common components:</p>
@@ -130,7 +132,7 @@ How can Deep Learning help Robotics and SLAM    Nicolò Valigi
 <li>an implementation of the VLAD algorithm for hand-engineered features (<a href="https://github.com/ameya005/VLAD-Implementation">github</a>)</li>
 <li>the implementation of BoW (<a href="https://github.com/dorian3d/DBoW2">github</a>) used in ORB-SLAM</li>
 <li><em>scene recognition</em> is the classification of image <em>context</em>. <a href='#Zhou2014' id='ref-Zhou2014-1'>Zhou et al. (2014)</a> introduce a new dataset that improves performance on such task, compared to conventional object-focused image collections. Training loop-closure networks on this dataset yields better performance that</li>
-</ul></body></html><hr>
+</ul><hr>
 <h2>Bibliography</h2>
 <p id='Arandjelovic2015'>Relja Arandjelović, Petr Gronat, Akihiko Torii, Tomas Pajdla, and Josef Sivic.
 NetVLAD: CNN architecture for weakly supervised place recognition.
@@ -165,7 +167,8 @@ URL: <a href="http://papers.nips.cc/paper/5349-learning-deep-features-for-scene-
   <div class="article_meta">
     <p>Posted on: Thu 15 September 2016</p>
     <p>Category: <a href="http://nicolovaligi.com/category/2016.html">2016</a>
-    </p>
+ &ndash; Tags:
+      <a href="http://nicolovaligi.com/tag/deep-learning.html">deep learning</a>,      <a href="http://nicolovaligi.com/tag/robotics.html">robotics</a>    </p>
   </div>
 
 

@@ -17,7 +17,7 @@
   <meta name="description" content="Posts and writings by Nicolò Valigi">
 
 
-<meta name="keywords" content="">
+<meta name="keywords" content="computer vision, robotics">
 
   <title>
 Simple bag-of-words loop closure for visual SLAM    Nicolò Valigi
@@ -74,7 +74,9 @@ Simple bag-of-words loop closure for visual SLAM    Nicolò Valigi
   <main>
     <header>
       <p>
-      <a href="http://nicolovaligi.com">Index</a> &brvbar; <a href="http://nicolovaligi.com/archives.html">Archives</a>
+      <a href="http://nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/archives.html">Archives</a>
       </p>
     </header>
 
@@ -83,7 +85,7 @@ Simple bag-of-words loop closure for visual SLAM    Nicolò Valigi
     <h1><a href="http://nicolovaligi.com/bag-of-words-loop-closure-visual-slam.html">Simple bag-of-words loop closure for visual SLAM</a></h1>
   </div>
   <div class="article_text">
-    <html><body><p><small><strong>Edit:</strong> I added some code and info on the <em>precision-recall</em> curve that is usually used to evaluate this sort of classification algorithms.</small></p>
+    <p><small><strong>Edit:</strong> I added some code and info on the <em>precision-recall</em> curve that is usually used to evaluate this sort of classification algorithms.</small></p>
 <p>This post goes through the theory and implementation of a simple algorithm for loop closure detection in visual SLAM. The code is available <a href="https://github.com/nicolov/simple_slam_loop_closure">on my Github</a>.</p>
 <p>As part of my research in <a href="http://nicolovaligi.com/deep-learning-robotics-slam.html">using deep learning for SLAM</a>, I found that <em>loop closure detection</em> would be a promising first application, due to its similarity to well-studied image classification problems. Before going ahead, I wanted to implement a baseline solution using "conventional" computer vision techniques. The following post describes the code I ended up implementing, based on the image description subsystem in <a href="https://github.com/raulmur/ORB_SLAM2">ORB-SLAM2</a>.</p>
 <h2>Goals</h2>
@@ -196,12 +198,13 @@ $$</div>
         "}";
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
-</script></body></html>
+</script>
   </div>
   <div class="article_meta">
     <p>Posted on: Sun 18 September 2016</p>
     <p>Category: <a href="http://nicolovaligi.com/category/2016-09-18-simple-loop-closure.html">2016-09-18-simple-loop-closure</a>
-    </p>
+ &ndash; Tags:
+      <a href="http://nicolovaligi.com/tag/computer-vision.html">computer vision</a>,      <a href="http://nicolovaligi.com/tag/robotics.html">robotics</a>    </p>
   </div>
 
 

@@ -17,7 +17,7 @@
   <meta name="description" content="Posts and writings by Nicolò Valigi">
 
 
-<meta name="keywords" content="">
+<meta name="keywords" content="backend, django">
 
   <title>
 SQLAlchemy queries in Django    Nicolò Valigi
@@ -74,7 +74,9 @@ SQLAlchemy queries in Django    Nicolò Valigi
   <main>
     <header>
       <p>
-      <a href="http://nicolovaligi.com">Index</a> &brvbar; <a href="http://nicolovaligi.com/archives.html">Archives</a>
+      <a href="http://nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/archives.html">Archives</a>
       </p>
     </header>
 
@@ -83,7 +85,7 @@ SQLAlchemy queries in Django    Nicolò Valigi
     <h1><a href="http://nicolovaligi.com/sql-alchemy-queries-in-django.html">SQLAlchemy queries in Django</a></h1>
   </div>
   <div class="article_text">
-    <html><body><p>Django's ORM is great for 99% of the common web development use cases. Every now and then, however, a bit more flexibility would go a long way and help stay out of the raw SQL rabbit hole. For example, reporting queries are difficult to build with Django's API and could benefit from a little more abstraction.</p>
+    <p>Django's ORM is great for 99% of the common web development use cases. Every now and then, however, a bit more flexibility would go a long way and help stay out of the raw SQL rabbit hole. For example, reporting queries are difficult to build with Django's API and could benefit from a little more abstraction.</p>
 <p>In this respect, I believe that SQLAlchemy's <a href="http://docs.sqlalchemy.org/en/latest/core/tutorial.html">SQL Expression Engine</a> allows for significant flexibility with neat and reusable code. In this piece, we will look at how to write queries with the Expression Engine and have them executed by Django's DB engine without additional configuration.</p>
 <h2>Integrating Django and SQLAlchemy</h2>
 <p>The great <a href="https://github.com/Deepwalker/aldjemy">aldjemy</a> package makes the initial integration painless, and sets up SQLAlchemy to reuse Django's DB connection.</p>
@@ -119,12 +121,13 @@ result = conn.execute(query)
 <p>While Django doesn't support connection pooling, it obviously has its own transaction system which is syncronized with the request/response cycle. Aldjemy plugs into this with the <code>core.DjangoPool</code> class which operates as a SQLAlchemy <code>NullPool</code> that piggybacks on Django's connections. Each connection is wrapped in a <code>wrapper.Wrapper</code> to disable SQLAlchemy's handling of transactions and rely on Django's.</p>
 <p>Tables are generated through reflection of Django's models in the <code>tables.generate_tables</code> function. Aldjemy keeps a mapping of Django field types to SQLAlchemy types and iterates through each model to add the relevant columns to its table.</p>
 <h2>Conclusions</h2>
-<p>We have seen how to use SQLAlchemy's SQL Expression Language to run complex queries on Django's database without needing to create additional connections or manually define the database schema.</p></body></html>
+<p>We have seen how to use SQLAlchemy's SQL Expression Language to run complex queries on Django's database without needing to create additional connections or manually define the database schema.</p>
   </div>
   <div class="article_meta">
     <p>Posted on: Fri 02 October 2015</p>
-    <p>Category: <a href="http://nicolovaligi.com/category/web-backend-django.html">web, backend, django</a>
-    </p>
+    <p>Category: <a href="http://nicolovaligi.com/category/2015.html">2015</a>
+ &ndash; Tags:
+      <a href="http://nicolovaligi.com/tag/backend.html">backend</a>,      <a href="http://nicolovaligi.com/tag/django.html">django</a>    </p>
   </div>
 
 

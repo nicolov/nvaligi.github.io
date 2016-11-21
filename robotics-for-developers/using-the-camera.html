@@ -17,7 +17,7 @@
   <meta name="description" content="Posts and writings by Nicolò Valigi">
 
 
-<meta name="keywords" content="">
+<meta name="keywords" content="robotics, perception">
 
   <title>
 Robotics for developers 3/6: using the camera    Nicolò Valigi
@@ -74,7 +74,9 @@ Robotics for developers 3/6: using the camera    Nicolò Valigi
   <main>
     <header>
       <p>
-      <a href="http://nicolovaligi.com">Index</a> &brvbar; <a href="http://nicolovaligi.com/archives.html">Archives</a>
+      <a href="http://nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/archives.html">Archives</a>
       </p>
     </header>
 
@@ -83,10 +85,10 @@ Robotics for developers 3/6: using the camera    Nicolò Valigi
     <h1><a href="http://nicolovaligi.com/robotics-for-developers/using-the-camera.html">Robotics for developers 3/6: using the camera</a></h1>
   </div>
   <div class="article_text">
-    <html><body><p>The previous post showed how to use probability theory and non-linear optimization to integrate different sources of information. But what kind of data does the observation of a fiducial marker actually produce? How can we find out the position of the camera with respect to the marker once we know its size and position within the image? In other words, what's the form of the measurement factor that gets added to the factor graph?</p>
+    <p>The previous post showed how to use probability theory and non-linear optimization to integrate different sources of information. But what kind of data does the observation of a fiducial marker actually produce? How can we find out the position of the camera with respect to the marker once we know its size and position within the image? In other words, what's the form of the measurement factor that gets added to the factor graph?</p>
 <h3>The pinhole model</h3>
 <p>We're going to use concepts from <em>geometric computer vision</em> to exploit the relationship between the position of the marker corners in the captured image and in the real world. To do this, we need to introduce a model for the physical behavior of a digital camera. While things can generally get hairy here, it's enough to say that a camera <em>projects</em> 3D points in the environment to 2D points in the sensor plane. <sup id="fnref:projection"><a class="footnote-ref" href="#fn:projection" rel="footnote">1</a></sup> Some basic geometry helps here, as shown in the following image (the dotted frame is the sensor plane):</p>
-<p><img class="img-center" src="http://nicolovaligi.com/robotics-for-developers/pinhole_model.png" style="max-width: 350px"/></p>
+<p><img )="" class="img-center" src="http://nicolovaligi.com/robotics-for-developers/pinhole_model.png" style="max-width: 350px"/></p>
 <p>The picture represents the relationship between world point <span class="math">\(P\)</span> (<code>world_p</code> 3-vector), and image point <span class="math">\(p\)</span>, (<code>image_p</code> 2-vector). There's a straightforward mathematical relationship between <span class="math">\(P\)</span> and <span class="math">\(p\)</span>, that can be expressed as: <sup id="fnref:notation"><a class="footnote-ref" href="#fn:notation" rel="footnote">2</a></sup></p>
 <pre><code>image_p[0] = world_p[0] * f_x / world_p[2] + o_x
 image_p[1] = world_p[1] * f_y / world_p[2] + o_y
@@ -291,12 +293,13 @@ fine.</p>
         "}";
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
-</script></body></html>
+</script>
   </div>
   <div class="article_meta">
     <p>Posted on: Sat 30 July 2016</p>
-    <p>Category: <a href="http://nicolovaligi.com/category/computer-vision-robotics.html">computer-vision robotics</a>
-    </p>
+    <p>Category: <a href="http://nicolovaligi.com/category/3_camera.html">3_camera</a>
+ &ndash; Tags:
+      <a href="http://nicolovaligi.com/tag/robotics.html">robotics</a>,      <a href="http://nicolovaligi.com/tag/perception.html">perception</a>    </p>
   </div>
 
 

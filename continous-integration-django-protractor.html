@@ -17,7 +17,7 @@
   <meta name="description" content="Posts and writings by Nicolò Valigi">
 
 
-<meta name="keywords" content="">
+<meta name="keywords" content="backend, django">
 
   <title>
 Continous integration with Django and Protractor    Nicolò Valigi
@@ -74,7 +74,9 @@ Continous integration with Django and Protractor    Nicolò Valigi
   <main>
     <header>
       <p>
-      <a href="http://nicolovaligi.com">Index</a> &brvbar; <a href="http://nicolovaligi.com/archives.html">Archives</a>
+      <a href="http://nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/archives.html">Archives</a>
       </p>
     </header>
 
@@ -83,7 +85,7 @@ Continous integration with Django and Protractor    Nicolò Valigi
     <h1><a href="http://nicolovaligi.com/continous-integration-django-protractor.html">Continous integration with Django and Protractor</a></h1>
   </div>
   <div class="article_text">
-    <html><body><p>Continous integration is a catchy term to refer to the software engineering practice of frequently committing to the <code>master</code> branch and running automated tests. Failing builds are tagged so that developers can (in theory) immediately drop everything they are doing to fix them.</p>
+    <p>Continous integration is a catchy term to refer to the software engineering practice of frequently committing to the <code>master</code> branch and running automated tests. Failing builds are tagged so that developers can (in theory) immediately drop everything they are doing to fix them.</p>
 <p>Besides the criticisms one could raise from an organizational perspective (a nice analysis is <a href="http://www.yegor256.com/2014/10/08/continuous-integration-is-dead.html">here</a>), doing CI right means having a reliable set of automated tests that run with appropriate database-backed data. This is somewhat of a challenge with the modern SPA + REST API setup, since the backend and frontend will each have a different set of unit and integration tests expecting certain rows in the database.</p>
 <p>In this article we are going to look at the popular Django+Angular configuration and lay down an architecture to easily integrate both testing suites (and run them on CircleCI).</p>
 <h2>The problem with Protractor</h2>
@@ -183,12 +185,13 @@ class Command(BaseCommand):
         return_code = subprocess.call(protractor_command.split())
         sys.exit(return_code)
 
-</code></pre></body></html>
+</code></pre>
   </div>
   <div class="article_meta">
     <p>Posted on: Wed 10 June 2015</p>
-    <p>Category: <a href="http://nicolovaligi.com/category/web-backend-django.html">web, backend, django</a>
-    </p>
+    <p>Category: <a href="http://nicolovaligi.com/category/2015.html">2015</a>
+ &ndash; Tags:
+      <a href="http://nicolovaligi.com/tag/backend.html">backend</a>,      <a href="http://nicolovaligi.com/tag/django.html">django</a>    </p>
   </div>
 
 

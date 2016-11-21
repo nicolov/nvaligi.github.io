@@ -17,7 +17,7 @@
   <meta name="description" content="Posts and writings by Nicolò Valigi">
 
 
-<meta name="keywords" content="">
+<meta name="keywords" content="robotics, perception">
 
   <title>
 Robotics for developers 5/6: exploring a bigger world    Nicolò Valigi
@@ -74,7 +74,9 @@ Robotics for developers 5/6: exploring a bigger world    Nicolò Valigi
   <main>
     <header>
       <p>
-      <a href="http://nicolovaligi.com">Index</a> &brvbar; <a href="http://nicolovaligi.com/archives.html">Archives</a>
+      <a href="http://nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/archives.html">Archives</a>
       </p>
     </header>
 
@@ -83,7 +85,7 @@ Robotics for developers 5/6: exploring a bigger world    Nicolò Valigi
     <h1><a href="http://nicolovaligi.com/robotics-for-developers/exploring-bigger-world.html">Robotics for developers 5/6: exploring a bigger world</a></h1>
   </div>
   <div class="article_text">
-    <html><body><p>In this post, we're going to finally realize the promise of SLAM and incrementally build a map of the environment. Until now, we have been bound to a single marker, so there wasn't much in the way of a map to talk about.</p>
+    <p>In this post, we're going to finally realize the promise of SLAM and incrementally build a map of the environment. Until now, we have been bound to a single marker, so there wasn't much in the way of a map to talk about.</p>
 <p>It turns out that the SLAM system with a map is great at exploring large environments, since the structure of the factor graph allows for on-line estimation of the relative pose between all markers. Even a single frame with two visible markers allows the optimizer to "learn" their relative pose, so that either can be used for localization. Any special role for the origin marker disappears, as any other marker can be used equally well for localization.</p>
 <h2>Extending the state and the factor graph</h2>
 <p>Since the marker detector already identifies each marker using its inner bits, we can trivially extend the state whenever we observe a new marker. While looping over all detected markers, we also make sure to link the <code>MarkerFactor</code> to the correct marker state. The factor graph ends up looking something like this:</p>
@@ -158,12 +160,13 @@ Robotics for developers 5/6: exploring a bigger world    Nicolò Valigi
         "}";
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
-</script></body></html>
+</script>
   </div>
   <div class="article_meta">
     <p>Posted on: Mon 01 August 2016</p>
-    <p>Category: <a href="http://nicolovaligi.com/category/computer-vision-robotics.html">computer-vision robotics</a>
-    </p>
+    <p>Category: <a href="http://nicolovaligi.com/category/5_multiple_markers.html">5_multiple_markers</a>
+ &ndash; Tags:
+      <a href="http://nicolovaligi.com/tag/robotics.html">robotics</a>,      <a href="http://nicolovaligi.com/tag/perception.html">perception</a>    </p>
   </div>
 
 

@@ -17,7 +17,7 @@
   <meta name="description" content="Posts and writings by Nicolò Valigi">
 
 
-<meta name="keywords" content="">
+<meta name="keywords" content="backend, django">
 
   <title>
 Domain sharding in Django    Nicolò Valigi
@@ -74,7 +74,9 @@ Domain sharding in Django    Nicolò Valigi
   <main>
     <header>
       <p>
-      <a href="http://nicolovaligi.com">Index</a> &brvbar; <a href="http://nicolovaligi.com/archives.html">Archives</a>
+      <a href="http://nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/archives.html">Archives</a>
       </p>
     </header>
 
@@ -83,7 +85,7 @@ Domain sharding in Django    Nicolò Valigi
     <h1><a href="http://nicolovaligi.com/domain-sharding-django.html">Domain sharding in Django</a></h1>
   </div>
   <div class="article_text">
-    <html><body><p>It's 2015. Static files should be served by a CDN. Period. This has several advantages, the most obvious being:</p>
+    <p>It's 2015. Static files should be served by a CDN. Period. This has several advantages, the most obvious being:</p>
 <ul>
 <li>it frees up the resources of your main server, both in bandwidth and CPU terms</li>
 <li>since requests to CDN assets are on a different domain, the browser doesn't have to send (useless) cookies with every request</li>
@@ -97,12 +99,13 @@ Domain sharding in Django    Nicolò Valigi
 <script src="https://gist.github.com/nicolov/7d993cc12203e7b81e08.js"></script>
 <p>As a side note, I'm also using the <code>easy_thumbnails</code> module for, you guessed it, thumbnails, and also had to set the <code>THUMBNAIL_DEFAULT_STORAGE</code> variable in <code>settings.py</code> to make sharding work for images.</p>
 <h2>Mobile, be aware</h2>
-<p>Some recent articles suggest that excessive reliance on domain sharding may actually be detrimental for mobile users due to the behaviour of mobile networks. Have a look <a href="http://www.mobify.com/blog/domain-sharding-bad-news-mobile-performance/">here</a> if your website has many visitors on 3/4G networks.</p></body></html>
+<p>Some recent articles suggest that excessive reliance on domain sharding may actually be detrimental for mobile users due to the behaviour of mobile networks. Have a look <a href="http://www.mobify.com/blog/domain-sharding-bad-news-mobile-performance/">here</a> if your website has many visitors on 3/4G networks.</p>
   </div>
   <div class="article_meta">
     <p>Posted on: Tue 13 October 2015</p>
-    <p>Category: <a href="http://nicolovaligi.com/category/web-backend-django.html">web, backend, django</a>
-    </p>
+    <p>Category: <a href="http://nicolovaligi.com/category/2015.html">2015</a>
+ &ndash; Tags:
+      <a href="http://nicolovaligi.com/tag/backend.html">backend</a>,      <a href="http://nicolovaligi.com/tag/django.html">django</a>    </p>
   </div>
 
 

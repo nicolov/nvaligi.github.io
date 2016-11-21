@@ -17,7 +17,7 @@
   <meta name="description" content="Posts and writings by Nicolò Valigi">
 
 
-<meta name="keywords" content="">
+<meta name="keywords" content="backend, python">
 
   <title>
 Automatic reconnection of Websockets in Autobahn    Nicolò Valigi
@@ -74,7 +74,9 @@ Automatic reconnection of Websockets in Autobahn    Nicolò Valigi
   <main>
     <header>
       <p>
-      <a href="http://nicolovaligi.com">Index</a> &brvbar; <a href="http://nicolovaligi.com/archives.html">Archives</a>
+      <a href="http://nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/archives.html">Archives</a>
       </p>
     </header>
 
@@ -83,7 +85,7 @@ Automatic reconnection of Websockets in Autobahn    Nicolò Valigi
     <h1><a href="http://nicolovaligi.com/automatic-reconnection-websockets-autobahn.html">Automatic reconnection of Websockets in Autobahn</a></h1>
   </div>
   <div class="article_text">
-    <html><body><p>After years spent fiddling with inferior technologies, web developers finally have a way to do slick and real-time two-way communication between browser and server. This functionality comes in the way of the Websocket API, which is supported in most <a href="http://caniuse.com/#feat=websockets">reasonably modern</a> browsers.</p>
+    <p>After years spent fiddling with inferior technologies, web developers finally have a way to do slick and real-time two-way communication between browser and server. This functionality comes in the way of the Websocket API, which is supported in most <a href="http://caniuse.com/#feat=websockets">reasonably modern</a> browsers.</p>
 <p>Websockets are not only used within the browser though. Their simple message-based API can be successfully leveraged for communications of all kinds on top of TCP. In the case of Python, multiple libraries are available. Of these, <a href="https://github.com/tavendo/AutobahnPython">AutobahnJS</a> looked the most promising to me due to:</p>
 <ul>
 <li>support for both Twisted and Python's core <code>asyncio</code>, for future proofing</li>
@@ -178,12 +180,13 @@ iptables -A OUTPUT -d $SERVER_IP -j DROP
 iptables -D OUTPUT -d $SERVER_IP -j DROP
 </code></pre>
 <h2>Conclusions</h2>
-<p>We have seen how to set up keepalive pings in the Python Autobahn Websocket library to quickly detect dropped connections and close them. With a little addition of code and some familiarity with Python's <code>asyncio</code> event loop, the client will also be able to re-estabilish dropped connections to the server.</p></body></html>
+<p>We have seen how to set up keepalive pings in the Python Autobahn Websocket library to quickly detect dropped connections and close them. With a little addition of code and some familiarity with Python's <code>asyncio</code> event loop, the client will also be able to re-estabilish dropped connections to the server.</p>
   </div>
   <div class="article_meta">
     <p>Posted on: Mon 10 August 2015</p>
-    <p>Category: <a href="http://nicolovaligi.com/category/web-backend-python.html">web, backend, python</a>
-    </p>
+    <p>Category: <a href="http://nicolovaligi.com/category/2015.html">2015</a>
+ &ndash; Tags:
+      <a href="http://nicolovaligi.com/tag/backend.html">backend</a>,      <a href="http://nicolovaligi.com/tag/python.html">python</a>    </p>
   </div>
 
 

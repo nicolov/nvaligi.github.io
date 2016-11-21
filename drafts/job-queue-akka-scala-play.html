@@ -17,10 +17,10 @@
   <meta name="description" content="Posts and writings by Nicolò Valigi">
 
 
-<meta name="keywords" content="">
+<meta name="keywords" content="backend, scala">
 
   <title>
-Robotics for developers: where to go from here    Nicolò Valigi
+A job queue for Scala using Akka and Play    Nicolò Valigi
   </title>
 
 <script>
@@ -82,15 +82,31 @@ Robotics for developers: where to go from here    Nicolò Valigi
 
 <article>
   <div class="article_title">
-    <h1><a href="http://nicolovaligi.com/drafts/robotics-for-developers/where-to-go.html">Robotics for developers: where to go from here</a></h1>
+    <h1><a href="http://nicolovaligi.com/drafts/job-queue-akka-scala-play.html">A job queue for Scala using Akka and Play</a></h1>
   </div>
   <div class="article_text">
-    <p>Some content</p>
+    <p>As more and more webapps start to integrate machine-learning powered features, the need for asynchronous background processing will only increase. Even for sending emails, apps need a way to manage tasks independently of the HTTP request/response cycle.</p>
+<p>On a Python/Django stack, I would have turned to trusty <a href="http://www.celeryproject.org/">Celery</a> with the recommended RabbitMQ broker backend. For several (good) reasons, however, this project runs on Scala with the Play framework. While I'm happy about the choice, it's true that a few of Django's included batteries are missing in this ecosystem. It turns out that a <em>job queue</em> package is one of those.</p>
+<h2>Desiderata</h2>
+<p>Simple queue
+Integrated in the same codebase
+No need for an external broker (idempotent requests)</p>
+<h2>Sitting on the shoulders of giants: Akka and the actor model</h2>
+<h2>Writing the worker</h2>
+<h2>Writing the master</h2>
+<h2>Using it in Play</h2>
+<p>Get a reference to the master</p>
+<p>Send a master</p>
+<h2>Next steps</h2>
+<p>monitoring
+logging
+persistence using akka-persistence</p>
   </div>
   <div class="article_meta">
-    <p>Posted on: Wed 03 August 2016</p>
-    <p>Category: <a href="http://nicolovaligi.com/category/computer-vision-robotics.html">computer-vision robotics</a>
-    </p>
+    <p>Posted on: Mon 14 November 2016</p>
+    <p>Category: <a href="http://nicolovaligi.com/category/2016.html">2016</a>
+ &ndash; Tags:
+      <a href="http://nicolovaligi.com/tag/backend.html">backend</a>,      <a href="http://nicolovaligi.com/tag/scala.html">scala</a>    </p>
   </div>
 
 
