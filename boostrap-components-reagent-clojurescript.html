@@ -94,26 +94,26 @@ Using (React) Bootstrap components in Reagent -
 <p>On the other hand, we can easily wrap the <a href="https://react-bootstrap.github.io/">react-bootstrap</a> project and have access to all the goodies.</p>
 <h2>Using Bootstrap components</h2>
 <p>First, we add the CLJSJS dependency to the project. I'm using Leiningen, so it's just a matter of editing the <code>project.clj</code> file:</p>
-<pre><code>(defproject demo-proj "0.1.0"
+<div class="highlight"><pre><span></span>(defproject demo-proj "0.1.0"
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-3211"]
                  [reagent "0.5.0"]
                  [cljsjs/react-bootstrap "0.25.1-0"]]
   ...)
-</code></pre>
+</pre></div>
 <p>Going to the views files, we require the React Bootstrap namespace:</p>
-<pre><code>(ns demo-project.views
+<div class="highlight"><pre><span></span>(ns demo-project.views
     (:require [reagent.core :as reagent]
               [cljsjs.react-bootstrap]))
-</code></pre>
+</pre></div>
 <p>We then use the magic <code>adapt-react-class</code> method (<a href="https://reagent-project.github.io/news/news050.html">reference</a>) to convert a React component to a Reagent-flavoured one that can be used directly:</p>
-<pre><code>(def Button (reagent/adapt-react-class (aget js/ReactBootstrap "Button")))
-</code></pre>
+<div class="highlight"><pre><span></span>(def Button (reagent/adapt-react-class (aget js/ReactBootstrap "Button")))
+</pre></div>
 <p>The <code>Button</code> component is now ready to use within the Hiccup templates:</p>
-<pre><code>[:div
+<div class="highlight"><pre><span></span>[:div
   [:h2 "A sample title"]
   [Button "with a button"]]
-</code></pre>
+</pre></div>
 <h2>Wrapping up</h2>
 <p>We have seen how to take advantage of the vast amount of community-contributed React components and use them whithin a Reagent application without much effort.</p>
   </div>

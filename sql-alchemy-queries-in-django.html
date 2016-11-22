@@ -91,33 +91,33 @@ SQLAlchemy queries in Django -
 <h2>Integrating Django and SQLAlchemy</h2>
 <p>The great <a href="https://github.com/Deepwalker/aldjemy">aldjemy</a> package makes the initial integration painless, and sets up SQLAlchemy to reuse Django's DB connection.</p>
 <p>However, its README focuses on on ORM-style queries using SQLAlchemy's own ORM API. Instead, let's look at how to extract the table information to run our own queries built using the expression engine.</p>
-<pre><code>from aldjemy.core import get_tables, get_engine
-from sqlalchemy.sql import select
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">aldjemy.core</span> <span class="kn">import</span> <span class="n">get_tables</span><span class="p">,</span> <span class="n">get_engine</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.sql</span> <span class="kn">import</span> <span class="n">select</span>
 
-# for the default DB
-engine = get_engine()
-# for another DB
-engine = get_engine('tracking')
+<span class="c1"># for the default DB</span>
+<span class="n">engine</span> <span class="o">=</span> <span class="n">get_engine</span><span class="p">()</span>
+<span class="c1"># for another DB</span>
+<span class="n">engine</span> <span class="o">=</span> <span class="n">get_engine</span><span class="p">(</span><span class="s1">'tracking'</span><span class="p">)</span>
 
-# a dict with DB tables
-tables = get_tables()
+<span class="c1"># a dict with DB tables</span>
+<span class="n">tables</span> <span class="o">=</span> <span class="n">get_tables</span><span class="p">()</span>
 
-# each table can now be accessed to build queries:
-widgets = tables['widgets']
+<span class="c1"># each table can now be accessed to build queries:</span>
+<span class="n">widgets</span> <span class="o">=</span> <span class="n">tables</span><span class="p">[</span><span class="s1">'widgets'</span><span class="p">]</span>
 
-query = select([
-            widget.c.id,
-            widget.c.name])
-</code></pre>
+<span class="n">query</span> <span class="o">=</span> <span class="n">select</span><span class="p">([</span>
+            <span class="n">widget</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="n">widget</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">])</span>
+</pre></div>
 <h2>Running the query</h2>
 <p>Since the <code>engine</code> object is already available, we can just open a connection and run the query:</p>
-<pre><code>conn = engine.connect()
+<div class="highlight"><pre><span></span>conn = engine.connect()
 result = conn.execute(query)
-</code></pre>
+</pre></div>
 <p>As an added note, I've found <a href="http://pandas.pydata.org">Pandas</a> to be very useful in these kinds of situations. In fact, easy column and row-level operations at the Python level nicely complement the flexibility in data retrieval afforded by SQLAlchemy.</p>
 <p>When using Pandas, fetching the query results into a DataFrame is even easier:</p>
-<pre><code>data_frame = pandas.read_sql_query(query, engine)
-</code></pre>
+<div class="highlight"><pre><span></span>data_frame = pandas.read_sql_query(query, engine)
+</pre></div>
 <h2>Under the hood</h2>
 <p>While Django doesn't support connection pooling, it obviously has its own transaction system which is syncronized with the request/response cycle. Aldjemy plugs into this with the <code>core.DjangoPool</code> class which operates as a SQLAlchemy <code>NullPool</code> that piggybacks on Django's connections. Each connection is wrapped in a <code>wrapper.Wrapper</code> to disable SQLAlchemy's handling of transactions and rely on Django's.</p>
 <p>Tables are generated through reflection of Django's models in the <code>tables.generate_tables</code> function. Aldjemy keeps a mapping of Django field types to SQLAlchemy types and iterates through each model to add the relevant columns to its table.</p>

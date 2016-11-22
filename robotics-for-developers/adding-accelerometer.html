@@ -100,46 +100,46 @@ Robotics for developers 6/6: adding an accelerometer -
 <p>From the estimation point of view, the IMU factor constrains successive positions and orientations in time. The gyroscope directly measures angular velocity, so that it can directly be used to constrain two successive orientation states (the math is a bit hairy though, as it uses incremental rotations). The acceleration as measured by the accelerometer, however, can not be used directly, since it's the second derivative. To handle this, we also need to keep the <em>velocity</em> of the robot as part of the estimation states.</p>
 <p>We need one final change, due to the way that accelerometers and gyroscope work. In real life, their measurements are not exact, but are <em>biased</em>. This can be modeled by adding a pair 3-dimensional bias terms to the measurement models of the IMU. The bias will be different each time the sensor is turned on, so it can not easily be calibrated out, but will change rather slowly over time. This means we can easily estimate the two biases as part of the estimation process.</p>
 <p>To recap, the IMU factor will be connected to a variety of states: the previous and current poses (position + orientation), the current pair of biases, and the current and previous velocities. That's how it looks like in code:</p>
-<pre><code class="cpp">    graph_.add(
-        gtsam::ImuFactor(s_prev_ic, s_prev_vel,
-                         s_ic, s_vel, s_bias,
-                         pre_integr_data));
-</code></pre>
+<div class="highlight"><pre><span></span>    <span class="n">graph_</span><span class="p">.</span><span class="n">add</span><span class="p">(</span>
+        <span class="n">gtsam</span><span class="o">::</span><span class="n">ImuFactor</span><span class="p">(</span><span class="n">s_prev_ic</span><span class="p">,</span> <span class="n">s_prev_vel</span><span class="p">,</span>
+                         <span class="n">s_ic</span><span class="p">,</span> <span class="n">s_vel</span><span class="p">,</span> <span class="n">s_bias</span><span class="p">,</span>
+                         <span class="n">pre_integr_data</span><span class="p">));</span>
+</pre></div>
 <p>Note that the implementation in GTSAM has the concept of <em>IMU preintegration</em>, i.e. accumulates a packet of measurements and adds multiple ones in a single factor (the paper linked above has more details). This reduces the size of the graph and thus the computational load, since we can keep adding pose states at camera frame rate, rather than the much higher IMU rate.</p>
 <p>As explained above, the pair of biases is modeled as a random walk, and we thus also need to add a simple <code>BetweenFactor</code> to model their time evolution. Following the concept of a random walk, we expect the change in biases to be zero. The noise model for this factor depends on the quality of the sensor and can be calibrated or extracted from its datasheet.</p>
-<pre><code class="cpp">auto bias_between_noise = gtsam::noiseModel::Diagonal::Sigmas(
-        sqrt(pre_integr_data.deltaTij()) * bias_between_sigmas_vec_);
+<div class="highlight"><pre><span></span><span class="k">auto</span> <span class="n">bias_between_noise</span> <span class="o">=</span> <span class="n">gtsam</span><span class="o">::</span><span class="n">noiseModel</span><span class="o">::</span><span class="n">Diagonal</span><span class="o">::</span><span class="n">Sigmas</span><span class="p">(</span>
+        <span class="n">sqrt</span><span class="p">(</span><span class="n">pre_integr_data</span><span class="p">.</span><span class="n">deltaTij</span><span class="p">())</span> <span class="o">*</span> <span class="n">bias_between_sigmas_vec_</span><span class="p">);</span>
 
-graph_.add(
-        gtsam::BetweenFactor&lt;gtsam::imuBias::ConstantBias&gt;(
-        s_prev_bias, s_bias,
-        gtsam::imuBias::ConstantBias(), bias_between_noise);
-</code></pre>
+<span class="n">graph_</span><span class="p">.</span><span class="n">add</span><span class="p">(</span>
+        <span class="n">gtsam</span><span class="o">::</span><span class="n">BetweenFactor</span><span class="o">&lt;</span><span class="n">gtsam</span><span class="o">::</span><span class="n">imuBias</span><span class="o">::</span><span class="n">ConstantBias</span><span class="o">&gt;</span><span class="p">(</span>
+        <span class="n">s_prev_bias</span><span class="p">,</span> <span class="n">s_bias</span><span class="p">,</span>
+        <span class="n">gtsam</span><span class="o">::</span><span class="n">imuBias</span><span class="o">::</span><span class="n">ConstantBias</span><span class="p">(),</span> <span class="n">bias_between_noise</span><span class="p">);</span>
+</pre></div>
 <h2>Gravity and initial calibration</h2>
 <p>One detail I've glossed over above is the initialization of an IMU-based system. Since the sensing elements of accelerometers are subject to gravitational acceleration (just like any other body on the surface of Earth), the values they measure include a gravitational acceleration term.</p>
 <p>Obviously, this term must be accounted for in the measurement model. According to ROS conventions, we use a navigation frame with upwards Z axis, and inform the factor of such:</p>
-<pre><code class="cpp">preint_params_ = gtsam::PreintegrationParams::MakeSharedU(9.81);
-</code></pre>
+<div class="highlight"><pre><span></span><span class="n">preint_params_</span> <span class="o">=</span> <span class="n">gtsam</span><span class="o">::</span><span class="n">PreintegrationParams</span><span class="o">::</span><span class="n">MakeSharedU</span><span class="p">(</span><span class="mf">9.81</span><span class="p">);</span>
+</pre></div>
 <p>To make sure that the system works properly, it's important that the <em>initial body orientation</em> is coherent with the gravity direction. In most applications, it can be safely be assumed that the robot is initially stationary. Under this assumption of zero motion, the accelerometer only measures gravitational acceleration. This means that a good estimate of the initial orientation can be found by requiring that the measured gravity vector transformed to the world frame through the initial pose matches the upwards direction. That's what we do in the <code>do_accel_init</code> function:</p>
-<pre><code class="cpp">void do_accel_init() {
-    gtsam::Vector3 acc_avg;
-    for (auto &amp;kv : imu_meas_) {
-        acc_avg += kv.second.first;
-    }
-    acc_avg /= imu_meas_.size();
-    ROS_WARN_STREAM("Gravity-aligning with accel. vector:\n" &lt;&lt; acc_avg);
+<div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">do_accel_init</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">gtsam</span><span class="o">::</span><span class="n">Vector3</span> <span class="n">acc_avg</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span><span class="k">auto</span> <span class="o">&amp;</span><span class="nl">kv</span> <span class="p">:</span> <span class="n">imu_meas_</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">acc_avg</span> <span class="o">+=</span> <span class="n">kv</span><span class="p">.</span><span class="n">second</span><span class="p">.</span><span class="n">first</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">acc_avg</span> <span class="o">/=</span> <span class="n">imu_meas_</span><span class="p">.</span><span class="n">size</span><span class="p">();</span>
+    <span class="n">ROS_WARN_STREAM</span><span class="p">(</span><span class="s">"Gravity-aligning with accel. vector:</span><span class="se">\n</span><span class="s">"</span> <span class="o">&lt;&lt;</span> <span class="n">acc_avg</span><span class="p">);</span>
 
-    gtsam::Vector3 gravity_vec;
-    gravity_vec &lt;&lt; 0.0, 0.0, gravity_magn_;
-    auto initial_att = gtsam::Rot3(
-        Eigen::Quaterniond().setFromTwoVectors(acc_avg, gravity_vec));
-    initial_pose_ = gtsam::Pose3(initial_att, gtsam::Point3());
+    <span class="n">gtsam</span><span class="o">::</span><span class="n">Vector3</span> <span class="n">gravity_vec</span><span class="p">;</span>
+    <span class="n">gravity_vec</span> <span class="o">&lt;&lt;</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">gravity_magn_</span><span class="p">;</span>
+    <span class="k">auto</span> <span class="n">initial_att</span> <span class="o">=</span> <span class="n">gtsam</span><span class="o">::</span><span class="n">Rot3</span><span class="p">(</span>
+        <span class="n">Eigen</span><span class="o">::</span><span class="n">Quaterniond</span><span class="p">().</span><span class="n">setFromTwoVectors</span><span class="p">(</span><span class="n">acc_avg</span><span class="p">,</span> <span class="n">gravity_vec</span><span class="p">));</span>
+    <span class="n">initial_pose_</span> <span class="o">=</span> <span class="n">gtsam</span><span class="o">::</span><span class="n">Pose3</span><span class="p">(</span><span class="n">initial_att</span><span class="p">,</span> <span class="n">gtsam</span><span class="o">::</span><span class="n">Point3</span><span class="p">());</span>
 
-    (initial_pose_ * acc_avg).print("Gravity vector after alignment:\n");
+    <span class="p">(</span><span class="n">initial_pose_</span> <span class="o">*</span> <span class="n">acc_avg</span><span class="p">).</span><span class="n">print</span><span class="p">(</span><span class="s">"Gravity vector after alignment:</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
 
-    accel_init_done_ = true;
-}
-</code></pre>
+    <span class="n">accel_init_done_</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
 <h2>Localization without markers</h2>
 <p>To show that the IMU really improves performance, we can artificially disable marker tracking for a few seconds and compare the pose <em>predicted</em> using the IMU to the one computed by marker tracking. This trick simulates a tracking failure and will ensure that the biases have converged and that the coordinate transformations are correct.</p>
 <p>The following plots compare the prediction to the final estimate after optimization. You can see how the two tracks of values are pretty close, since the fiducial marker is tracked at 20Hz and the IMU measurements don't have time to diverge. The section without data points in the middle is the artificial pause.</p>

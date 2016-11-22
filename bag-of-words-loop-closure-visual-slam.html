@@ -108,17 +108,15 @@ Simple bag-of-words loop closure for visual SLAM -
 </ul>
 <h2>Bag of words representations</h2>
 <p>We start by picking hundreds of interest points (<strong>features</strong>) throughout the image and extracting their representations using one of the available <em>feature descriptors</em>. For this, we can use the SURF descriptor available in OpenCV:</p>
-<pre><code class="cpp">
-// This vector will hold the detected keypoints
-vector&lt;cv::KeyPoint&gt; keypoints;
+<div class="highlight"><pre><span></span><span class="c1">// This vector will hold the detected keypoints</span>
+<span class="n">vector</span><span class="o">&lt;</span><span class="n">cv</span><span class="o">::</span><span class="n">KeyPoint</span><span class="o">&gt;</span> <span class="n">keypoints</span><span class="p">;</span>
 
-// This vector will hold their vector descriptors
-vector&lt;float&gt; descriptors;
+<span class="c1">// This vector will hold their vector descriptors</span>
+<span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span> <span class="n">descriptors</span><span class="p">;</span>
 
-surf_detector-&gt;detectAndCompute(
-    image, cv::Mat(), keypoints, descriptors);
-
-</code></pre>
+<span class="n">surf_detector</span><span class="o">-&gt;</span><span class="n">detectAndCompute</span><span class="p">(</span>
+    <span class="n">image</span><span class="p">,</span> <span class="n">cv</span><span class="o">::</span><span class="n">Mat</span><span class="p">(),</span> <span class="n">keypoints</span><span class="p">,</span> <span class="n">descriptors</span><span class="p">);</span>
+</pre></div>
 <p>Directly using the <code>vector&lt;float&gt;</code> as the image representation is not a good idea, since it takes up a lot of space and does not generalize well to new images. To compress it, we borrow an idea from text processing: the <strong>(Visual) Bag of Words (BoW)</strong> representation. First, he feature descriptors are clustered around the words in a <em>visual vocabulary</em>. The clustering reduces the problem to a matter of <strong>counting</strong> how many times each word in the vocabulary occurs in the original <code>vector&lt;float&gt;</code>. Finally, the image can be represented using the resulting <strong>histogram</strong> of frequencies, as shown in the following diagram:</p>
 <p><img alt="BoW representation" class="img-center" src="http://nicolovaligi.com/bag_of_words.png" style="max-width: 600px"/></p>
 <p>The vocabulary is trained beforehand using k-means clustering and a large dataset of images.</p>

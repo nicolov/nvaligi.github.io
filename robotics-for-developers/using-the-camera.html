@@ -91,9 +91,9 @@ Robotics for developers 3/6: using the camera -
 <p>We're going to use concepts from <em>geometric computer vision</em> to exploit the relationship between the position of the marker corners in the captured image and in the real world. To do this, we need to introduce a model for the physical behavior of a digital camera. While things can generally get hairy here, it's enough to say that a camera <em>projects</em> 3D points in the environment to 2D points in the sensor plane. <sup id="fnref:projection"><a class="footnote-ref" href="#fn:projection" rel="footnote">1</a></sup> Some basic geometry helps here, as shown in the following image (the dotted frame is the sensor plane):</p>
 <p><img )="" class="img-center" src="http://nicolovaligi.com/robotics-for-developers/pinhole_model.png" style="max-width: 350px"/></p>
 <p>The picture represents the relationship between world point <span class="math">\(P\)</span> (<code>world_p</code> 3-vector), and image point <span class="math">\(p\)</span>, (<code>image_p</code> 2-vector). There's a straightforward mathematical relationship between <span class="math">\(P\)</span> and <span class="math">\(p\)</span>, that can be expressed as: <sup id="fnref:notation"><a class="footnote-ref" href="#fn:notation" rel="footnote">2</a></sup></p>
-<pre><code>image_p[0] = world_p[0] * f_x / world_p[2] + o_x
+<div class="highlight"><pre><span></span>image_p[0] = world_p[0] * f_x / world_p[2] + o_x
 image_p[1] = world_p[1] * f_y / world_p[2] + o_y
-</code></pre>
+</pre></div>
 <p>As you will have noticed, there are three unknown parameters in the equation: <code>f_x</code>, <code>f_y</code>, <code>o_x</code>, <code>o_y</code>. These numbers are <em>intrinsic</em> properties of the imaging system (camera + lens combination) and are the same for any point in any frame. They're usually obtained through the process of <em>intrinsic calibration</em> of the camera, which we're going to happily skip, since it's well-covered online and doesn't require much insight. There's a bit more on this topic, namely introducing corrections for lens imperfections, but it's not very important for a full understanding.</p>
 <p>In mathematical terms, the pinhole projection equations can be written as:</p>
 <div class="math">$$
@@ -111,9 +111,9 @@ $$</div>
 <p>To make things simpler, we can assume that the camera is at position <span class="math">\((0, 0, 0)\)</span>. Later, we'll see how it's generally more convenient to have one of the markers in this position, and leave the camera floating in space.</p>
 <p>In any case, given that we know the position of the camera, the situation is just like the projection picture above, and the state will simply be the position of the corner point <em>in the world</em>.</p>
 <p>The pinhole equations, expressed here by the function <code>project</code>, are all we need to write the measurement model: <sup id="fnref:meas_model"><a class="footnote-ref" href="#fn:meas_model" rel="footnote">4</a></sup></p>
-<pre><code>error[0] = measured_image_p[0] - project(world_p)[0]
+<div class="highlight"><pre><span></span>error[0] = measured_image_p[0] - project(world_p)[0]
 error[1] = measured_image_p[1] - project(world_p)[1]
-</code></pre>
+</pre></div>
 <p>The equations above compute the <strong>reprojection error</strong> for a single point
 correspondence. The array notation emphasizes that the reprojection error is a
 two dimensional vector (one horizontal and one vertical term). Note how the vector dimensions all match: <code>project</code> takes a 3D points and returns a 2D point, just like <code>measured_image_p</code> is.</p>
@@ -140,33 +140,33 @@ to cheat, ran the detection on a different machine, and recorded the results in
 a new file. This also makes for a smaller download, since we won't need the
 images anymore, but just the position of the corners and their ids. <sup id="fnref:rosbag"><a class="footnote-ref" href="#fn:rosbag" rel="footnote">6</a></sup></p>
 <p>Let's take one of these datasets and examine it with <code>rosbag info</code>:</p>
-<pre><code class="plain">types:       geometry_msgs/TransformStamped [b5764a33bfeb3588febc2682852579b0]
-             rcars_detector/TagArray        [f8c7f4812d2c3fcc55ab560a8de1d680]
-             sensor_msgs/CameraInfo         [c9a58c1b0b154e0e6da7578cb991d214]
-             sensor_msgs/Imu                [6a62c6daae103f4ff57a132d6f95cec2]
-topics:      /cam0/camera_info       1269 msgs    : sensor_msgs/CameraInfo        
-             /imu0                  12690 msgs    : sensor_msgs/Imu               
-             /rcars/detector/tags    1269 msgs    : rcars_detector/TagArray       
-             /vicon/auk/auk          6343 msgs    : geometry_msgs/TransformStamped
-</code></pre>
+<div class="highlight"><pre><span></span><span class="n">types</span><span class="o">:</span>       <span class="n">geometry_msgs</span><span class="o">/</span><span class="n">TransformStamped</span> <span class="o">[</span><span class="n">b5764a33bfeb3588febc2682852579b0</span><span class="o">]</span>
+             <span class="n">rcars_detector</span><span class="o">/</span><span class="n">TagArray</span>        <span class="o">[</span><span class="n">f8c7f4812d2c3fcc55ab560a8de1d680</span><span class="o">]</span>
+             <span class="n">sensor_msgs</span><span class="o">/</span><span class="n">CameraInfo</span>         <span class="o">[</span><span class="n">c9a58c1b0b154e0e6da7578cb991d214</span><span class="o">]</span>
+             <span class="n">sensor_msgs</span><span class="o">/</span><span class="n">Imu</span>                <span class="o">[</span><span class="mi">6</span><span class="n">a62c6daae103f4ff57a132d6f95cec2</span><span class="o">]</span>
+<span class="n">topics</span><span class="o">:</span>      <span class="sr">/cam0/camera_info       1269 msgs    : sensor_msgs/</span><span class="n">CameraInfo</span>        
+             <span class="sr">/imu0                  12690 msgs    : sensor_msgs/</span><span class="n">Imu</span>               
+             <span class="sr">/rcars/detector/tags    1269 msgs    : rcars_detector/</span><span class="n">TagArray</span>       
+             <span class="sr">/vicon/auk/auk          6343 msgs    : geometry_msgs/</span><span class="n">TransformStamped</span>
+</pre></div>
 <p>For now, all the data we need to feed into the optimizer is in the <code>/rcars/detector/tags</code> and <code>/cam0/camera_info</code> (that contains the intrinsics parameters as described above).</p>
 <h2>Putting everything together - code!</h2>
 <p>What follows is a walk-through of the code I've pushed <a href="https://github.com/nicolov/robotics_for_developers">here</a>. We're going to
 gloss over most of the boring sections and focus on the juicy parts, as it's
 easy to pick up the former from examples and ROS tutorials. <sup id="fnref:gtsam_examples"><a class="footnote-ref" href="#fn:gtsam_examples" rel="footnote">7</a></sup></p>
 <p>To start, we setup containers for the problem structure and the values associated with each element of the state:</p>
-<pre><code class="cpp">gtsam::NonlinearFactorGraph graph;
-gtsam::Values estimate;
-</code></pre>
+<div class="highlight"><pre><span></span><span class="n">gtsam</span><span class="o">::</span><span class="n">NonlinearFactorGraph</span> <span class="n">graph</span><span class="p">;</span>
+<span class="n">gtsam</span><span class="o">::</span><span class="n">Values</span> <span class="n">estimate</span><span class="p">;</span>
+</pre></div>
 <p>Each piece of the state needs a label (<code>gtsam::Symbol</code>) that will identify it during the optimization problem. We create one for the camera pose and one for the marker pose:</p>
-<pre><code class="cpp">auto s_camera = gtsam::Symbol('C', 0);
-auto s_marker = gtsam::Symbol('M', 0);
-</code></pre>
+<div class="highlight"><pre><span></span><span class="k">auto</span> <span class="n">s_camera</span> <span class="o">=</span> <span class="n">gtsam</span><span class="o">::</span><span class="n">Symbol</span><span class="p">(</span><span class="sc">'C'</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<span class="k">auto</span> <span class="n">s_marker</span> <span class="o">=</span> <span class="n">gtsam</span><span class="o">::</span><span class="n">Symbol</span><span class="p">(</span><span class="sc">'M'</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</pre></div>
 <p>The optimization needs to start somewhere, so we pick initial guesses and insert them in the <code>Values</code> container:</p>
-<pre><code class="cpp">estimate.insert(s_marker, gtsam::Pose3());
-auto cam_guess = gtsam::Pose3(gtsam::Rot3(), gtsam::Point3(0, 0, 0.5));
-estimate.insert(s_camera, cam_guess);
-</code></pre>
+<div class="highlight"><pre><span></span><span class="n">estimate</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">s_marker</span><span class="p">,</span> <span class="n">gtsam</span><span class="o">::</span><span class="n">Pose3</span><span class="p">());</span>
+<span class="k">auto</span> <span class="n">cam_guess</span> <span class="o">=</span> <span class="n">gtsam</span><span class="o">::</span><span class="n">Pose3</span><span class="p">(</span><span class="n">gtsam</span><span class="o">::</span><span class="n">Rot3</span><span class="p">(),</span> <span class="n">gtsam</span><span class="o">::</span><span class="n">Point3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">));</span>
+<span class="n">estimate</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">s_camera</span><span class="p">,</span> <span class="n">cam_guess</span><span class="p">);</span>
+</pre></div>
 <p>In this example, the initial guess for the camera pose is 0.5 meters away from
 the marker, in the <span class="math">\(z\)</span> direction. As with any nonlinear optimization problem,
 the initial guesses should be chosen quite carefully, otherwise the optimizer
@@ -178,25 +178,25 @@ the marker detection is pretty robust and unlikely to produce <strong>outliers</
 (hopelessly wrong values, as opposed to slightly incorrect measurements due to
 normal errors). Robust handling of outliers is another can of worms which is
 usually taken care of using <em>robust estimators</em>.</p>
-<pre><code class="cpp">auto pixel_noise = gtsam::noiseModel::Isotropic::shared_ptr(
-    gtsam::noiseModel::Isotropic::Sigma(8, 1));
-</code></pre>
+<div class="highlight"><pre><span></span><span class="k">auto</span> <span class="n">pixel_noise</span> <span class="o">=</span> <span class="n">gtsam</span><span class="o">::</span><span class="n">noiseModel</span><span class="o">::</span><span class="n">Isotropic</span><span class="o">::</span><span class="n">shared_ptr</span><span class="p">(</span>
+    <span class="n">gtsam</span><span class="o">::</span><span class="n">noiseModel</span><span class="o">::</span><span class="n">Isotropic</span><span class="o">::</span><span class="n">Sigma</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">1</span><span class="p">));</span>
+</pre></div>
 <p>The standard deviation of 1 pixel is pretty common in practice. It's now time to create a <strong>prior factor</strong> to encode our belief that the marker pose is close to the identity. The way this works is that I've decided that I want the marker to be in the origin pose, and thus create the prior accordingly. I could have set this prior anywhere (for example, 5 meters east), with no changes. However, a prior is indeed required otherwise the information in the measurement would not be enough to constrain the camera pose. This is somewhat intuitive, since it's clear that observing an object at a certain distance doesn't tell us where the camera is at all. That's why we need to add this additional belief.</p>
-<pre><code class="cpp">auto origin_noise = gtsam::noiseModel::Isotropic::shared_ptr(
-    gtsam::noiseModel::Isotropic::Sigma(6, 1e-3));
+<div class="highlight"><pre><span></span><span class="k">auto</span> <span class="n">origin_noise</span> <span class="o">=</span> <span class="n">gtsam</span><span class="o">::</span><span class="n">noiseModel</span><span class="o">::</span><span class="n">Isotropic</span><span class="o">::</span><span class="n">shared_ptr</span><span class="p">(</span>
+    <span class="n">gtsam</span><span class="o">::</span><span class="n">noiseModel</span><span class="o">::</span><span class="n">Isotropic</span><span class="o">::</span><span class="n">Sigma</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">));</span>
 
-graph.push_back(
-  gtsam::PriorFactor&lt;gtsam::Pose3&gt;(s_marker, gtsam::Pose3(), origin_noise));
-</code></pre>
+<span class="n">graph</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span>
+  <span class="n">gtsam</span><span class="o">::</span><span class="n">PriorFactor</span><span class="o">&lt;</span><span class="n">gtsam</span><span class="o">::</span><span class="n">Pose3</span><span class="o">&gt;</span><span class="p">(</span><span class="n">s_marker</span><span class="p">,</span> <span class="n">gtsam</span><span class="o">::</span><span class="n">Pose3</span><span class="p">(),</span> <span class="n">origin_noise</span><span class="p">));</span>
+</pre></div>
 <p>It's finally time to add the measurement corresponding to the marker observation. We do this with the <code>MarkerFactor</code> class that embeds the reprojection error calculation:</p>
-<pre><code class="cpp">graph.push_back(
-  MarkerFactor(corners, pixel_noise, s_camera, s_marker, K_, tag_size_));
-</code></pre>
+<div class="highlight"><pre><span></span><span class="n">graph</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span>
+  <span class="n">MarkerFactor</span><span class="p">(</span><span class="n">corners</span><span class="p">,</span> <span class="n">pixel_noise</span><span class="p">,</span> <span class="n">s_camera</span><span class="p">,</span> <span class="n">s_marker</span><span class="p">,</span> <span class="n">K_</span><span class="p">,</span> <span class="n">tag_size_</span><span class="p">));</span>
+</pre></div>
 <p>This factor is more complicated than the others, since it must be connected to both the marker and the camera poses and also needs the camera calibration (<code>K_</code>) and the side length of the marker (<code>tag_size_</code>).</p>
 <p>Now that the factor graph is set up, we can kick off the optimization and relax:</p>
-<pre><code class="cpp">auto result = gtsam::GaussNewtonOptimizer(graph, estimate).optimize();
-auto opt_camera_pose = result.at&lt;gtsam::Pose3&gt;(s_camera);
-</code></pre>
+<div class="highlight"><pre><span></span><span class="k">auto</span> <span class="n">result</span> <span class="o">=</span> <span class="n">gtsam</span><span class="o">::</span><span class="n">GaussNewtonOptimizer</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">estimate</span><span class="p">).</span><span class="n">optimize</span><span class="p">();</span>
+<span class="k">auto</span> <span class="n">opt_camera_pose</span> <span class="o">=</span> <span class="n">result</span><span class="p">.</span><span class="n">at</span><span class="o">&lt;</span><span class="n">gtsam</span><span class="o">::</span><span class="n">Pose3</span><span class="o">&gt;</span><span class="p">(</span><span class="n">s_camera</span><span class="p">);</span>
+</pre></div>
 <p>The choice of the optimization algorithm has a significant effect on the
 convergence properties, speed and accuracy of the solution. Since the problem
 here is pretty straightforward, a basic textbook choice like Gauss-Newton's is

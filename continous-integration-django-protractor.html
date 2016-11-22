@@ -91,15 +91,15 @@ Continous integration with Django and Protractor -
 <p>In this article we are going to look at the popular Django+Angular configuration and lay down an architecture to easily integrate both testing suites (and run them on CircleCI).</p>
 <h2>The problem with Protractor</h2>
 <p>Protractor is the de-facto solution for end-to-end testing of Angular.JS applications. Specifications ("specs") for application behaviour can be written following the Jasmine API and easily run from the command line:</p>
-<pre><code>protractor protractor.conf.js --specs="specs/my_spec.js"
-</code></pre>
+<div class="highlight"><pre><span></span>protractor protractor.conf.js --specs="specs/my_spec.js"
+</pre></div>
 <p>The problem with this setup is that each spec may potentially require a different set of data in the database. Django and DRF (as usual) brilliantly solve the issue by allowing the user to declare a fixture when defining the <code>TestCase</code>:</p>
-<pre><code>class ExampleTests(APITestCase):
-    fixtures = [...]
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="n">ExampleTests</span>(<span class="n">APITestCase</span>):
+    <span class="n">fixtures</span> = [...]
 
-    def setUp(self):
+    <span class="n">def</span> <span class="n">setUp</span>(<span class="k">self</span>):
         ...
-</code></pre>
+</pre></div>
 <p>Looking at the problem, we see two potential solutions:</p>
 <ul>
 <li>script the automated testing so that Django management commands <code>flush</code> and <code>loaddata</code> are run before each Protractor spec, creating a new database and loading the necessary data.</li>
@@ -109,84 +109,83 @@ Continous integration with Django and Protractor -
 <h2>A Django management command</h2>
 <p>There's an interesting <a href="https://github.com/jpulec/django-protractor">project on GitHub</a> offering a tidy Mixin to Django's unit testing classes that spawns a Protractor process with given fixtures. While neat, this is no solution for us because it only ever uses Django's development (and static file) server. I tend to believe that integration tests should be run with as close a configuration to production as possible. In our case, this means that protractor should load the pages through the <em>gunicorn/nginx</em> stack.</p>
 <p>On the other hand, not having access to Django's testing classes (that automatically set up and tear down new databases) means handling these jobs ourselves. What came out is a management command that takes command line arguments for both django fixtures and protractor specs:</p>
-<pre><code>python manage.py protractor
+<div class="highlight"><pre><span></span>python manage.py protractor
     --protractor-conf="protractor/conf.js"
     --fixture="protractor/fixture_a.json"
     --fixture="protractor/fixture_b.json"
     --specs="protractor/spec_1.spec.js"
-</code></pre>
+</pre></div>
 <h2>Running everything on CircleCI</h2>
 <p>Now that all work has been delegated to the management command, all that needs to be done to run protractor tests in CircleCI is to add lines similar to the one above to the <code>test: override:</code> array in the circle.yml file. As noted below, please keep in mind that the command does <em>not</em> support parallel testing, since each process shares the same, single, database (unlike normal Django tests that set up their own databases).</p>
 <h2>Conclusions</h2>
 <p>Thorough testing requires not only a fair number of test cases, but a variety of different situations as well. To solve this issue, we have shown code for a Django management command that wraps protractor processes to load appropriate database fixtures.</p>
 <h2>The code</h2>
 <p>The management command below <strong>flushes</strong> the database before loading the fixtures requested on the command line. So be careful not to run this on databases with valuable data. The CircleCI VM is obviously fine.</p>
-<pre><code>import os, sys, subprocess
-from multiprocessing import Process
-from optparse import make_option
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">subprocess</span>
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Process</span>
+<span class="kn">from</span> <span class="nn">optparse</span> <span class="kn">import</span> <span class="n">make_option</span>
 
-from django.core.management import call_command
-from django.core.management.base import BaseCommand
-from django.db import connection
-from django.conf import settings
-from django.test.runner import setup_databases
+<span class="kn">from</span> <span class="nn">django.core.management</span> <span class="kn">import</span> <span class="n">call_command</span>
+<span class="kn">from</span> <span class="nn">django.core.management.base</span> <span class="kn">import</span> <span class="n">BaseCommand</span>
+<span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">connection</span>
+<span class="kn">from</span> <span class="nn">django.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">django.test.runner</span> <span class="kn">import</span> <span class="n">setup_databases</span>
 
-from south.management.commands import patch_for_test_db_setup
+<span class="kn">from</span> <span class="nn">south.management.commands</span> <span class="kn">import</span> <span class="n">patch_for_test_db_setup</span>
 
-class Command(BaseCommand):
-    args = '[--protractor-conf] [--runserver-command] [--specs] [--suite]'
+<span class="k">class</span> <span class="nc">Command</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="s1">'[--protractor-conf] [--runserver-command] [--specs] [--suite]'</span>
 
-    option_list = BaseCommand.option_list + (
-        make_option('--protractor-conf',
-            action='store',
-            dest='protractor_conf',
-            default='protractor.conf.js',
-            help='Specify a destination for your protractor configuration'
-        ),
-        make_option('--specs',
-            action='store',
-            dest='specs',
-            help='Specify which specs to run'
-        ),
-        make_option('--suite',
-            action='store',
-            dest='suite',
-            help='Specify which suite to run'
-        ),
-        make_option('--fixture',
-            action='append',
-            dest='fixtures',
-            help='Specify fixture to load initial data to the database'
-        ),
-    )
+    <span class="n">option_list</span> <span class="o">=</span> <span class="n">BaseCommand</span><span class="o">.</span><span class="n">option_list</span> <span class="o">+</span> <span class="p">(</span>
+        <span class="n">make_option</span><span class="p">(</span><span class="s1">'--protractor-conf'</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="s1">'store'</span><span class="p">,</span>
+            <span class="n">dest</span><span class="o">=</span><span class="s1">'protractor_conf'</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="s1">'protractor.conf.js'</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s1">'Specify a destination for your protractor configuration'</span>
+        <span class="p">),</span>
+        <span class="n">make_option</span><span class="p">(</span><span class="s1">'--specs'</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="s1">'store'</span><span class="p">,</span>
+            <span class="n">dest</span><span class="o">=</span><span class="s1">'specs'</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s1">'Specify which specs to run'</span>
+        <span class="p">),</span>
+        <span class="n">make_option</span><span class="p">(</span><span class="s1">'--suite'</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="s1">'store'</span><span class="p">,</span>
+            <span class="n">dest</span><span class="o">=</span><span class="s1">'suite'</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s1">'Specify which suite to run'</span>
+        <span class="p">),</span>
+        <span class="n">make_option</span><span class="p">(</span><span class="s1">'--fixture'</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="s1">'append'</span><span class="p">,</span>
+            <span class="n">dest</span><span class="o">=</span><span class="s1">'fixtures'</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s1">'Specify fixture to load initial data to the database'</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
 
-    def handle(self, *args, **options):
-        options['verbosity'] = int(options.get('verbosity'))
+    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="n">options</span><span class="p">[</span><span class="s1">'verbosity'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'verbosity'</span><span class="p">))</span>
 
-        if not os.path.exists(options['protractor_conf']):
-            raise IOError("Could not find '{}'"
-                .format(options['protractor_conf']))
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="s1">'protractor_conf'</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">"Could not find '{}'"</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="s1">'protractor_conf'</span><span class="p">]))</span>
 
-        # flush the database
-        call_command('flush', verbosity=1, interactive=False)
+        <span class="c1"># flush the database</span>
+        <span class="n">call_command</span><span class="p">(</span><span class="s1">'flush'</span><span class="p">,</span> <span class="n">verbosity</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">interactive</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 
-        fixtures = options['fixtures']
-        if fixtures:
-            for fixture in fixtures:
-                call_command('loaddata', fixture,
-                             **{'verbosity': options['verbosity']})
+        <span class="n">fixtures</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s1">'fixtures'</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">fixtures</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">fixture</span> <span class="ow">in</span> <span class="n">fixtures</span><span class="p">:</span>
+                <span class="n">call_command</span><span class="p">(</span><span class="s1">'loaddata'</span><span class="p">,</span> <span class="n">fixture</span><span class="p">,</span>
+                             <span class="o">**</span><span class="p">{</span><span class="s1">'verbosity'</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">'verbosity'</span><span class="p">]})</span>
 
-        protractor_command = 'protractor {}'.format(options['protractor_conf'])
-        if options['specs']:
-            protractor_command += ' --specs {}'.format(options['specs'])
-        if options['suite']:
-            protractor_command += ' --suite {}'.format(options['suite'])
+        <span class="n">protractor_command</span> <span class="o">=</span> <span class="s1">'protractor {}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="s1">'protractor_conf'</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s1">'specs'</span><span class="p">]:</span>
+            <span class="n">protractor_command</span> <span class="o">+=</span> <span class="s1">' --specs {}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="s1">'specs'</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s1">'suite'</span><span class="p">]:</span>
+            <span class="n">protractor_command</span> <span class="o">+=</span> <span class="s1">' --suite {}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="s1">'suite'</span><span class="p">])</span>
 
-        self.stdout.write("Running protractor..\n" + protractor_command + "\n")
-        return_code = subprocess.call(protractor_command.split())
-        sys.exit(return_code)
-
-</code></pre>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"Running protractor..</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="n">protractor_command</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">return_code</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">protractor_command</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">return_code</span><span class="p">)</span>
+</pre></div>
   </div>
   <div class="article_meta">
     <p>Posted on: Wed 10 June 2015</p>

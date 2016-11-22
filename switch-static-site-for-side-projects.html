@@ -103,43 +103,42 @@ Building static sites with Django -
 </ul>
 <h3>Implementation details</h3>
 <p>I needed to make sure all arguments were passed in as part of the URL (and not as query parameters). This required a bit of regex magic on the URL definitions. For example, I wanted to have optional trailing fragments with the current page and had to use the horrible:</p>
-<pre><code>(r'^cool-page(?:/(?P&lt;page&gt;[0-9]+))?/$')
-</code></pre>
+<div class="highlight"><pre><span></span>(r'^cool-page(?:/(?P&lt;page&gt;[0-9]+))?/$')
+</pre></div>
 <p>to make sure that the URLs would be reversed correctly (forgetting the final slash is severely punished by the SEO gods).</p>
 <p>The biggest chore is defining a list of all URLs that should be hit while rendering the site. On the bright side, I consider this a kind of <em>integration testing</em> of the database, views, and template layers.</p>
 <p>Most URL definitions will use <code>django.core.urlresolvers.reverse_lazy</code> to refer to names paths in the <code>urls.py</code> module. For example:</p>
-<pre><code>class FixedPages(DiskStaticSiteRenderer):
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="n">FixedPages</span>(<span class="n">DiskStaticSiteRenderer</span>):
 
-    def get_paths(self):
-        return set([
-            reverse_lazy('index'),
-            reverse_lazy('about-page'),
-            reverse_lazy('top-10')
+    <span class="n">def</span> <span class="n">get_paths</span>(<span class="k">self</span>):
+        <span class="k">return</span> <span class="n">set</span>([
+            <span class="n">reverse_lazy</span>(<span class="s">'index'</span>),
+            <span class="n">reverse_lazy</span>(<span class="s">'about-page'</span>),
+            <span class="n">reverse_lazy</span>(<span class="s">'top-10'</span>)
         ])
-
-</code></pre>
+</pre></div>
 <p>Paginated lists that hit the database are trickier, since the total number of pages is not known in advance, and an additional database query is needed.</p>
-<pre><code>def get_paths(slug):
+<div class="highlight"><pre><span></span>def get_paths(slug):
     qs = Article.objects.filter(category__slug=slug)
     pages_range = range(2, (qs.count()-1) // 10 + 2)
 
     return set([
         [rev('category_list', args=(slug, page)) for page in pages_range] +
         [rev('category_list', args=(slug,))]])
-</code></pre>
+</pre></div>
 <p>I've done some more hacking to render multiple domains and store the HTMLs in different folders:</p>
-<pre><code>from django_medusa.renderers import DiskStaticSiteRenderer
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">django_medusa.renderers</span> <span class="kn">import</span> <span class="n">DiskStaticSiteRenderer</span>
 
-def CustomHostDiskRenderer(DiskStaticSiteRenderer):
+<span class="k">def</span> <span class="nf">CustomHostDiskRenderer</span><span class="p">(</span><span class="n">DiskStaticSiteRenderer</span><span class="p">):</span>
 
-    def __init__(self, host_name):
-        super(DiskStaticSiteRenderer, self).__init__(self)
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host_name</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DiskStaticSiteRenderer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-        self.http_host = host_name
-        self.DEPLOY_DIR = os.path.join(
-            settings.MEDUSA_DEPLOY_DIR,
-            self.http_host)
-</code></pre>
+        <span class="bp">self</span><span class="o">.</span><span class="n">http_host</span> <span class="o">=</span> <span class="n">host_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DEPLOY_DIR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">MEDUSA_DEPLOY_DIR</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">http_host</span><span class="p">)</span>
+</pre></div>
 <h2>A good choice</h2>
 <p>It now takes around 1 minute to completely rebuild my static site in a few (human) languages, and I've yet to feel the need to set up incremental builds to speed up the process. A few lines in nginx's configuration got me:</p>
 <ul>

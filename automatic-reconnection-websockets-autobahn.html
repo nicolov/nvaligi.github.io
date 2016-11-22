@@ -99,62 +99,61 @@ Automatic reconnection of Websockets in Autobahn -
 <h2>Pinging to detect broken connections</h2>
 <p>In our example setup, the server is available at a fixed IP address and waits for incoming connections from the client. Luckily, the Websocket protocol provides a ping/response mechanism to keep the connection alive (some more information on heartbeat pings is available <a href="http://django-websocket-redis.readthedocs.org/en/latest/heartbeats.html">here</a>).</p>
 <p>On the server, we modify the example to set additional protocol options:</p>
-<pre><code>factory = WebSocketServerFactory(debug=False)
+<div class="highlight"><pre><span></span>factory = WebSocketServerFactory(debug=False)
 factory.protocol = MyServerProtocol
 # enable automatic pinging
 factory.setProtocolOptions(autoPingInterval=5,
                            autoPingTimeout=2)
-</code></pre>
+</pre></div>
 <p>With this change, the server will detect a dropped connection after at most 5+2 seconds, i.e. once the ping timeout is over.</p>
 <p>At this stage, the client is still unable to detect dropped connections until it tries to send a message. To solve the problem, we add logic to keep track of the time elapsed since the last ping request. This functionality is implemented as additional methods in the <code>WebSocketClientProtocol</code> subclass, as follows:</p>
-<pre><code>from autobahn.asyncio.websocket import WebSocketClientProtocol, \
-WebSocketClientFactory
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">autobahn.asyncio.websocket</span> <span class="kn">import</span> <span class="n">WebSocketClientProtocol</span><span class="p">,</span> \
+<span class="n">WebSocketClientFactory</span>
 
-class MyClientProtocol(WebSocketClientProtocol):
-    KEEPALIVE_INTERVAL = 5
+<span class="k">class</span> <span class="nc">MyClientProtocol</span><span class="p">(</span><span class="n">WebSocketClientProtocol</span><span class="p">):</span>
+    <span class="n">KEEPALIVE_INTERVAL</span> <span class="o">=</span> <span class="mi">5</span>
 
-    def check_keepalive(self):
-        last_interval = time.time() - self.last_ping_time
+    <span class="k">def</span> <span class="nf">check_keepalive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">last_interval</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_ping_time</span>
 
-        if last_interval &gt; 2*self.PING_INTERVAL:
-            # drop connection
-            self.dropConnection(abort=True)
-        else:
-            # reschedule next check
-            self.schedule_keepalive()
+        <span class="k">if</span> <span class="n">last_interval</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">PING_INTERVAL</span><span class="p">:</span>
+            <span class="c1"># drop connection</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dropConnection</span><span class="p">(</span><span class="n">abort</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># reschedule next check</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schedule_keepalive</span><span class="p">()</span>
 
-    def schedule_keepalive(self):
-        """ Store the future in the class to cancel it later. """
-        self.keepalive_fut = loop.call_later(self.PING_INTERVAL,
-                                             self.check_keepalive)
+    <span class="k">def</span> <span class="nf">schedule_keepalive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">""" Store the future in the class to cancel it later. """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keepalive_fut</span> <span class="o">=</span> <span class="n">loop</span><span class="o">.</span><span class="n">call_later</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PING_INTERVAL</span><span class="p">,</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">check_keepalive</span><span class="p">)</span>
 
-    def onOpen(self):
-        """ Start scheduling the keepalive check. """
-        self.last_ping_time = time.time()
-        self.schedule_keepalive()
+    <span class="k">def</span> <span class="nf">onOpen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">""" Start scheduling the keepalive check. """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_ping_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedule_keepalive</span><span class="p">()</span>
 
-    def onPing(self, payload):
-        """ Respond to the ping request. """
-        self.last_ping_time = time.time()
-        self.sendPong(payload)
+    <span class="k">def</span> <span class="nf">onPing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+        <span class="sd">""" Respond to the ping request. """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_ping_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sendPong</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
 
-    def connection_lost(self, exc):
-        """ Cancel the scheduled future. """
-        self.keepalive_fut.cancel()
-</code></pre>
+    <span class="k">def</span> <span class="nf">connection_lost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc</span><span class="p">):</span>
+        <span class="sd">""" Cancel the scheduled future. """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keepalive_fut</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+</pre></div>
 <h2>Automatic reconnection</h2>
 <p>Thanks to the automatic ping, both client and server will detect dropped connections in a timely manner and close the connection. However, we would still like the client to try to reconnect indefinitely. First, we modify the <code>connection_lost</code> method to stop the event loop:</p>
-<pre><code>class MyClientProtocol(WebSocketClientProtocol):
-    # ...
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="n">MyClientProtocol</span>(<span class="n">WebSocketClientProtocol</span>):
+    <span class="c c-Singleline"># ...</span>
 
-    def connection_lost(self, exc):
-        """ Cancel the future and stop the event loop. """
-        self.keepalive_fut.cancel()
-        loop.stop()
-</code></pre>
+    <span class="n">def</span> <span class="n">connection_lost</span>(<span class="k">self</span>, <span class="n">exc</span>):
+        <span class="s">""" Cancel the future and stop the event loop. """</span>
+        <span class="k">self</span>.<span class="n">keepalive_fut</span>.<span class="n">cancel</span>()
+        <span class="k">loop</span>.<span class="n">stop</span>()
+</pre></div>
 <p>We also add a <code>while True:</code> loop in the main code of the module, with a timeout to account for dropped packets during the initial connection:</p>
-<pre><code>
-while True:
+<div class="highlight"><pre><span></span>while True:
     fut = loop.create_connection(factory, address, port)
 
     try:
@@ -169,17 +168,16 @@ while True:
     loop.run_until_complete(asyncio.sleep(5))
 
 loop.close()
-
-</code></pre>
+</pre></div>
 <h2>Simulating dropped connections</h2>
 <p>Disconnecting the Ethernet cable to simulate dropped connections gets boring very quickly (especially with servers on the cloud..) Use these <code>iptables</code> commands to start dropping all packets exchanged with <code>$SERVER_IP</code>:</p>
-<pre><code>iptables -A INPUT -s $SERVER_IP -j DROP;
-iptables -A OUTPUT -d $SERVER_IP -j DROP
-</code></pre>
+<div class="highlight"><pre><span></span><span class="x">iptables -A INPUT -s </span><span class="p">$</span><span class="nv">SERVER_IP</span><span class="x"> -j DROP;</span>
+<span class="x">iptables -A OUTPUT -d </span><span class="p">$</span><span class="nv">SERVER_IP</span><span class="x"> -j DROP</span>
+</pre></div>
 <p>and this one to get rid of the filter when done:</p>
-<pre><code>iptables -D INPUT -s $SERVER_IP -j DROP;
-iptables -D OUTPUT -d $SERVER_IP -j DROP
-</code></pre>
+<div class="highlight"><pre><span></span><span class="x">iptables -D INPUT -s </span><span class="p">$</span><span class="nv">SERVER_IP</span><span class="x"> -j DROP;</span>
+<span class="x">iptables -D OUTPUT -d </span><span class="p">$</span><span class="nv">SERVER_IP</span><span class="x"> -j DROP</span>
+</pre></div>
 <h2>Conclusions</h2>
 <p>We have seen how to set up keepalive pings in the Python Autobahn Websocket library to quickly detect dropped connections and close them. With a little addition of code and some familiarity with Python's <code>asyncio</code> event loop, the client will also be able to re-estabilish dropped connections to the server.</p>
   </div>
