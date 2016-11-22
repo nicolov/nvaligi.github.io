@@ -49,7 +49,7 @@ DEFAULT_PAGINATION = 11
 # This will get over-written by publishconf.py
 RELATIVE_URLS = True
 
-MD_EXTENSIONS = ['extra']
+MD_EXTENSIONS = ['codehilite(css_class=highlight)','extra']
 
 PATH = 'content'
 STATIC_PATHS = ['blog', 'robotics-for-developers', 'extra/CNAME']
