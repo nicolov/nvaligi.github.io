@@ -19,7 +19,6 @@ nbformat==4.1.0
 pelican==3.6.3
 pexpect==4.2.1
 pickleshare==0.7.4
-pkg-resources==0.0.0
 prompt-toolkit==1.0.9
 ptyprocess==0.5.1
 pybtex==0.20.1
