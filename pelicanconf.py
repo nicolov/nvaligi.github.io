@@ -67,7 +67,7 @@ PUBLICATIONS_SRC = 'content/bib.bib'
 
 SUMMARY_MAX_LENGTH = 30
 
-PLUGIN_PATHS = ['../pelican-plugins']
+PLUGIN_PATHS = ['./pelican-plugins']
 PLUGINS = ["render_math", "pdf-img", "pelican-cite", "ipynb.markup"]
 
 # svbhack
