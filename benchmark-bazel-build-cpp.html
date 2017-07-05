@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- ## for client-side less
+  <link rel="stylesheet/less" type="text/css" href="http://nicolovaligi.com/theme/css/style.less">
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
+  -->
+  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Nicolò Valigi">
+  <meta name="description" content="Posts and writings by Nicolò Valigi">
+
+
+<meta name="keywords" content="cpp bazel">
+
+  <title>
+Benchmarking the Bazel build system on real-life C++ -
+    Nicolò Valigi
+  </title>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-67820015-1', 'auto');
+  ga('send', 'pageview');
+
+</script></head>
+
+<body>
+  <aside>
+    <div id="user_meta">
+      <a href="http://nicolovaligi.com">
+        <img src="/blog/images/logo_white.jpg" alt="logo">
+      </a>
+      <h2><a href="http://nicolovaligi.com">Nicolò Valigi</a></h2>
+      <p>Chronicles of learning.</p>
+      <ul class="links">
+        <li><a href="http://nicolovaligi.com/pages/tutorial-on-robotics-for-developers.html">Tutorial on robotics for developers</a></li>
+      </ul>
+
+      <ul style="padding-left: 0;
+                 margin-left: -5px;
+                 list-style: none;
+                 text-align: center;">
+        <li>
+            <a href="https://github.com/nicolov">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+        <li>
+            <a href="mailto:nicolo.valigi@gmail.com">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-envelope fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+    </ul>
+
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <p>
+      <a href="http://nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/archives.html">Archives</a>
+      </p>
+    </header>
+
+<article>
+  <div class="article_title">
+    <h1><a href="http://nicolovaligi.com/benchmark-bazel-build-cpp.html">Benchmarking the Bazel build system on real-life C++</a></h1>
+  </div>
+  <div class="article_text">
+    <p><strong>tldr;</strong>: Bazel does a good job on local builds. Check out my <a href="benchmark-bazel-build-cpp.html">second article
+</a> for the juicy bits on remote caching.</p>
+<p><a href="http://bazel.build">Bazel</a> is the open-source version of Google's internal
+build system that is used to build their billions of lines of code. Google's
+PR machine has been effective so far, and it seems that the project is picking
+up steam. But how fast is it for real-life projects? I ran my own benchmarks
+to find out.</p>
+<h2>Picking a project to benchmark</h2>
+<p>Large C++ projects have a tendency to build very slowly, due to unfortunate
+language "features" and tooling that has never really outgrown design
+constraints from the 70s.</p>
+<p>I scoured GitHub for one such project with a Bazel build already set-up, and
+came across <a href="https://github.com/RobotLocomotion/drake">drake</a>, a robotics
+toolbox by MIT CSAIL. The migration from CMake to Bazel is actually underway
+as I'm writing this, and you can follow its progress on <a href="https://github.com/RobotLocomotion/drake/issues/3129">this GitHub
+issue</a>.</p>
+<p><code>cloc</code> reports a fair amount of C++ code, even without considering all the
+third party dependencies that are downloaded from external repos (some of
+which are quite substantial, like the Bullet physics library).</p>
+<blockquote>
+<table>
+<thead>
+<tr>
+<th align="left">Language</th>
+<th align="right">files</th>
+<th align="right">blank</th>
+<th align="right">comment</th>
+<th align="right">code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">C++</td>
+<td align="right">817</td>
+<td align="right">21778</td>
+<td align="right">18847</td>
+<td align="right">110883</td>
+</tr>
+<tr>
+<td align="left">C/C++ Header</td>
+<td align="right">544</td>
+<td align="right">12379</td>
+<td align="right">34730</td>
+<td align="right">42462</td>
+</tr>
+<tr>
+<td align="left">MATLAB</td>
+<td align="right">333</td>
+<td align="right">2327</td>
+<td align="right">3313</td>
+<td align="right">10292</td>
+</tr>
+<tr>
+<td align="left">CMake</td>
+<td align="right">104</td>
+<td align="right">1360</td>
+<td align="right">1819</td>
+<td align="right">7301</td>
+</tr>
+<tr>
+<td align="left">Python</td>
+<td align="right">70</td>
+<td align="right">993</td>
+<td align="right">1365</td>
+<td align="right">3387</td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+<h2>Build time benchmarks</h2>
+<p>I've prepared a Docker image and some Python scripts to time how long Bazel
+takes to build the drake tree. While drake actually ships with a CMake build
+too, any direct comparison would be biased since the set of targets between
+the two differ quite a lot. The code is available on <a href="https://github.com/nicolov/bazel-benchmarks">my
+GitHub</a>.</p>
+<p>The <code>benchmarks.py</code> script is designed to simulate real-life development
+workflows, and will run through the following steps:</p>
+<ul>
+<li>checkout the code</li>
+<li>do a fresh build of the drake project</li>
+<li>build again, without modifying any file (<em>no-op</em> build)</li>
+<li>checkout a different commit</li>
+<li>do an incremental build of this new commit</li>
+<li>revert to the original commit</li>
+<li>build again</li>
+</ul>
+<p>To approximate day-to-day changes to the codebase, I've picked two commits
+roughly two weeks apart. <code>git diff</code> says that ~30k lines differ between the
+two. Elapsed times for each of these steps look like this:</p>
+<p><img alt="Bazel build system benchmark" class="img-center" src="http://nicolovaligi.com/timings.png" style="max-width: 500px"/></p>
+<p>While the first build takes around 20 minutes, re-building after upgrading to
+the newer commit only takes ~ 50% of that, confirming that dependency tracking
+is doing <em>something</em> (but it's really hard to find out how much of this is to
+Bazel's credit).</p>
+<p>One thing I'm really excited about is that <em>no-op</em> builds (i.e. when no file
+is modified) are really fast: under 2 seconds for tens of thousands of C++
+files. Such great performance can likely attributed to the Bazel daemon
+running in the background and maintaining a cache to speed up dependency
+checks.</p>
+<h2>Conclusions</h2>
+<p>Bazel seems to handle local builds just fine, and provides a good out-of-the
+box experience where a single command downloads third party dependencies and
+builds the project. However, this is something that many other build systems,
+including CMake, can provide already. In this area, Bazel doesn't really serve
+a compelling story, except for the arguably cleaner configuration format.</p>
+<p>However, Bazel also supports <strong>remote caching and execution</strong>, where build
+artifacts can be shared between multiple workstations to speed up builds, and
+even built on a pool of workers instead. These neat features were born out of
+Google's massive scale, and are enabled by Bazel's very strict approach to
+build dependencies. Have a look at my <a href="on my blog">second article</a> for more
+information and benchmarks about them.</p>
+  </div>
+  <div class="article_meta">
+    <p>Posted on: lun 03 luglio 2017</p>
+    <p>Category: <a href="http://nicolovaligi.com/category/2017-07-03-bazel-build-benchmarks-cpp.html">2017-07-03-bazel-build-benchmarks-cpp</a>
+ &ndash; Tags:
+      <a href="http://nicolovaligi.com/tag/cpp-bazel.html">cpp bazel</a>    </p>
+  </div>
+
+
+</article>
+
+
+    <div id="ending_message">
+      <p>&copy; Nicolò Valigi. Built using <a href="http://getpelican.com" target="_blank">Pelican</a>. Theme originally by Giulio Fidente on <a href="https://github.com/gfidente/pelican-svbhack" target="_blank">github</a>. </p>
+    </div>
+  </main>
+</body>
+</html>
