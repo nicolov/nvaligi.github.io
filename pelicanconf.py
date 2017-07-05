@@ -68,11 +68,11 @@ PUBLICATIONS_SRC = 'content/bib.bib'
 SUMMARY_MAX_LENGTH = 30
 
 PLUGIN_PATHS = ['./pelican-plugins']
-PLUGINS = ["render_math", "pdf-img", "pelican-cite", "ipynb.markup"]
+PLUGINS = ["render_math", "pdf-img", "pelican-cite", "pelican-ipynb.markup"]
 
 # svbhack
 USER_LOGO_URL = '/blog/images/logo_white.jpg'
-TAGLINE = """Chronicles of (constant) learning."""
+TAGLINE = """Chronicles of learning."""
 
 # Get ipython notebooks summary from the meta file
 IPYNB_USE_META_SUMMARY = True
