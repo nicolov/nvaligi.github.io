@@ -2,7 +2,7 @@ Date: 2017-07-03
 Slug: benchmark-bazel-build-cpp
 Summary: Benchmarking the Bazel build system on real-life C++
 Title: Benchmarking the Bazel build system on real-life C++
-Tags: cpp bazel
+Tags: c++, bazel
 
 **tldr;**: Bazel does a good job on local builds. Check out my [second article
 ](benchmark-bazel-build-cpp.html) for the juicy bits on remote caching.

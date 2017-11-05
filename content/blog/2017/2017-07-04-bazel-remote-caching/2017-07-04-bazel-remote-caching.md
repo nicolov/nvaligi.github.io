@@ -2,7 +2,7 @@ Date: 2017-07-04
 Slug: faster-bazel-remote-caching-benchmark
 Summary: Faster Bazel builds with remote caching
 Title: Faster Bazel builds with remote caching: a benchmark
-Tags: cpp bazel
+Tags: c++, bazel
 
 **tldr;** Remote caching is simple to set up and makes repeated builds _50x_
 faster.

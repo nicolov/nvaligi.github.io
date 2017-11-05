@@ -1,17 +1,23 @@
-Nico's blog
-===========
+Nico's personal page
+====================
 
-```
-git submodule update --init --recursive
+Source code for my [personal page](https://nicolovaligi.com).
 
-sudo npm install -g browser-sync
+Publish
+-------
 
-echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+    make publish
+    make github
 
-make devserver
+Write
+-----
 
-make stopserver
+    git submodule update --init --recursive
 
-make publish
-make github
-```
+    sudo npm install -g browser-sync
+
+    echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+
+    make devserver
+
+    make stopserver
