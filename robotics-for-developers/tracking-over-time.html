@@ -3,11 +3,11 @@
 
 <head>
   <!-- ## for client-side less
-  <link rel="stylesheet/less" type="text/css" href="http://nicolovaligi.com/theme/css/style.less">
+  <link rel="stylesheet/less" type="text/css" href="//nicolovaligi.com/theme/css/style.less">
   <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
   -->
-  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/style.css">
-  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="//nicolovaligi.com/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="//nicolovaligi.com/theme/css/pygments.css">
   <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 
@@ -38,13 +38,13 @@ Robotics for developers 4/6: tracking the robot over time -
 <body>
   <aside>
     <div id="user_meta">
-      <a href="http://nicolovaligi.com">
+      <a href="//nicolovaligi.com">
         <img src="/blog/images/logo_white.jpg" alt="logo">
       </a>
-      <h2><a href="http://nicolovaligi.com">Nicolò Valigi</a></h2>
+      <h2><a href="//nicolovaligi.com">Nicolò Valigi</a></h2>
       <p>Chronicles of learning.</p>
       <ul class="links">
-        <li><a href="http://nicolovaligi.com/pages/tutorial-on-robotics-for-developers.html">Tutorial on robotics for developers</a></li>
+        <li><a href="//nicolovaligi.com/pages/tutorial-on-robotics-for-developers.html">Tutorial on robotics for developers</a></li>
       </ul>
 
       <ul style="padding-left: 0;
@@ -75,24 +75,24 @@ Robotics for developers 4/6: tracking the robot over time -
   <main>
     <header>
       <p>
-      <a href="http://nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
-      <a href="http://nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
-      <a href="http://nicolovaligi.com/archives.html">Archives</a>
+      <a href="//nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="//nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="//nicolovaligi.com/archives.html">Archives</a>
       </p>
     </header>
 
 <article>
   <div class="article_title">
-    <h1><a href="http://nicolovaligi.com/robotics-for-developers/tracking-over-time.html">Robotics for developers 4/6: tracking the robot over time</a></h1>
+    <h1><a href="//nicolovaligi.com/robotics-for-developers/tracking-over-time.html">Robotics for developers 4/6: tracking the robot over time</a></h1>
   </div>
   <div class="article_text">
     <p>In the previous post, we have set up a probabilistic model to determine the relative position between the onboard camera and an artificial marker placed on the scene. So far, so good. However, this approach considers each frame independently, wihout any notion of continuous motion of the robot.</p>
 <p>This simplification is actually surprisingly fine in our case, since fiducial markers can easily be tracked frame-by-frame without issues (that's why we picked them in the first place, after all). However, a real life system will use natural features that need to be tracked continously, and thus needs to somehow remember its history. In the next section, we're going to have a look at the two main ways of doing it.</p>
 <h2>Adding more frames</h2>
 <p>The most intuitive way to incorporate knowledge of past states in the system is to extend the state each time a new image is captured. The factor graph we had at the end of the last post:</p>
-<p><a href="http://nicolovaligi.com/robotics-for-developers/2_architecture/fgraph_singlemarker.pdf"><img alt="Single marker factor graph" class="img-center" src="http://nicolovaligi.com/__pdf_previews__/robotics-for-developers/2_architecture/fgraph_singlemarker.pdf.png" style="max-width: 320px"/></a></p>
+<p><a href="//nicolovaligi.com/robotics-for-developers/2_architecture/fgraph_singlemarker.pdf"><img alt="Single marker factor graph" class="img-center" src="//nicolovaligi.com/__pdf_previews__/robotics-for-developers/2_architecture/fgraph_singlemarker.pdf.png" style="max-width: 320px"/></a></p>
 <p>after 2 more frames would look like this instead:</p>
-<p><a href="http://nicolovaligi.com/robotics-for-developers/4_time_evolution/fgraph_multicam.pdf"><img alt="Factor graph with multiple cameras" class="img-center" src="http://nicolovaligi.com/__pdf_previews__/robotics-for-developers/4_time_evolution/fgraph_multicam.pdf.png" style="max-width: 300px"/></a></p>
+<p><a href="//nicolovaligi.com/robotics-for-developers/4_time_evolution/fgraph_multicam.pdf"><img alt="Factor graph with multiple cameras" class="img-center" src="//nicolovaligi.com/__pdf_previews__/robotics-for-developers/4_time_evolution/fgraph_multicam.pdf.png" style="max-width: 300px"/></a></p>
 <p>The state element for the marker pose doesn't need to be duplicated, since we assume that it stands still. However, we consider that each new frame corresponds to a new camera position and thus duplicate the corresponding state element accordingly.</p>
 <p>Besides the added camera poses and corresponding marker observations, we had to add a whole new sets on factors (on the right in the graph above). These factors encode the our knowledge that successive camera positions will be rather close to each other (since the robot moves with a relative low velocity). GTSAM offers a <code>BetweenFactor</code> that can be used to constrain the relative pose between two state element. On a ground robot, we could have used data from the wheel sensors to correlate two camera states. In this case, however, we have no such information and will postulate the camera is standing still. Since this is obviously incorrect, we're going to adopt an appropriate noise model so that the optimizer places little faith in this prediction.</p>
 <p>In a later post, we're going to replace this rough approximation with information from the accelerometer.</p>
@@ -192,9 +192,9 @@ Robotics for developers 4/6: tracking the robot over time -
   </div>
   <div class="article_meta">
     <p>Posted on: Sun 31 July 2016</p>
-    <p>Category: <a href="http://nicolovaligi.com/category/4_time_evolution.html">4_time_evolution</a>
+    <p>Category: <a href="//nicolovaligi.com/category/4_time_evolution.html">4_time_evolution</a>
  &ndash; Tags:
-      <a href="http://nicolovaligi.com/tag/robotics.html">robotics</a>,      <a href="http://nicolovaligi.com/tag/perception.html">perception</a>    </p>
+      <a href="//nicolovaligi.com/tag/robotics.html">robotics</a>,      <a href="//nicolovaligi.com/tag/perception.html">perception</a>    </p>
   </div>
 
 

@@ -3,11 +3,11 @@
 
 <head>
   <!-- ## for client-side less
-  <link rel="stylesheet/less" type="text/css" href="http://nicolovaligi.com/theme/css/style.less">
+  <link rel="stylesheet/less" type="text/css" href="//nicolovaligi.com/theme/css/style.less">
   <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
   -->
-  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/style.css">
-  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="//nicolovaligi.com/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="//nicolovaligi.com/theme/css/pygments.css">
   <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 
@@ -38,13 +38,13 @@ Simple bag-of-words loop closure for visual SLAM -
 <body>
   <aside>
     <div id="user_meta">
-      <a href="http://nicolovaligi.com">
+      <a href="//nicolovaligi.com">
         <img src="/blog/images/logo_white.jpg" alt="logo">
       </a>
-      <h2><a href="http://nicolovaligi.com">Nicolò Valigi</a></h2>
+      <h2><a href="//nicolovaligi.com">Nicolò Valigi</a></h2>
       <p>Chronicles of learning.</p>
       <ul class="links">
-        <li><a href="http://nicolovaligi.com/pages/tutorial-on-robotics-for-developers.html">Tutorial on robotics for developers</a></li>
+        <li><a href="//nicolovaligi.com/pages/tutorial-on-robotics-for-developers.html">Tutorial on robotics for developers</a></li>
       </ul>
 
       <ul style="padding-left: 0;
@@ -75,23 +75,23 @@ Simple bag-of-words loop closure for visual SLAM -
   <main>
     <header>
       <p>
-      <a href="http://nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
-      <a href="http://nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
-      <a href="http://nicolovaligi.com/archives.html">Archives</a>
+      <a href="//nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="//nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="//nicolovaligi.com/archives.html">Archives</a>
       </p>
     </header>
 
 <article>
   <div class="article_title">
-    <h1><a href="http://nicolovaligi.com/bag-of-words-loop-closure-visual-slam.html">Simple bag-of-words loop closure for visual SLAM</a></h1>
+    <h1><a href="//nicolovaligi.com/bag-of-words-loop-closure-visual-slam.html">Simple bag-of-words loop closure for visual SLAM</a></h1>
   </div>
   <div class="article_text">
     <p><small><strong>Edit:</strong> I added some code and info on the <em>precision-recall</em> curve that is usually used to evaluate this sort of classification algorithms.</small></p>
 <p>This post goes through the theory and implementation of a simple algorithm for loop closure detection in visual SLAM. The code is available <a href="https://github.com/nicolov/simple_slam_loop_closure">on my Github</a>.</p>
-<p>As part of my research in <a href="http://nicolovaligi.com/deep-learning-robotics-slam.html">using deep learning for SLAM</a>, I found that <em>loop closure detection</em> would be a promising first application, due to its similarity to well-studied image classification problems. Before going ahead, I wanted to implement a baseline solution using "conventional" computer vision techniques. The following post describes the code I ended up implementing, based on the image description subsystem in <a href="https://github.com/raulmur/ORB_SLAM2">ORB-SLAM2</a>.</p>
+<p>As part of my research in <a href="//nicolovaligi.com/deep-learning-robotics-slam.html">using deep learning for SLAM</a>, I found that <em>loop closure detection</em> would be a promising first application, due to its similarity to well-studied image classification problems. Before going ahead, I wanted to implement a baseline solution using "conventional" computer vision techniques. The following post describes the code I ended up implementing, based on the image description subsystem in <a href="https://github.com/raulmur/ORB_SLAM2">ORB-SLAM2</a>.</p>
 <h2>Goals</h2>
 <p>The main goal in loop closure is being able to detect when the robot is observing a previously-explored scene, so that additional constraints can be added to the map. As the number of frames grows, the naive solution quickly becomes computationally intractable. Instead of directly comparing pixel values, a better idea is to build a <em>compact description</em> of each scene that can be handled faster.</p>
-<p><img alt="Building a compact vector representation for images." class="img-center" src="http://nicolovaligi.com/image_reprs.png" style="max-width: 600px"/></p>
+<p><img alt="Building a compact vector representation for images." class="img-center" src="//nicolovaligi.com/image_reprs.png" style="max-width: 600px"/></p>
 <p>AThese descriptions should be designed so that vector distance in the descriptions space is equivalent to similarity in the image space. For optimum performance, the vectors should also be robust to illumination or slight viewpoint changes.</p>
 <p>There's also a huge body of work on data structures that can be used to efficiently query vector descriptors. We won't be covering those here, since these techniques are applicable to any image descriptor.</p>
 <p>To recap, we are looking for the following properties:</p>
@@ -118,13 +118,13 @@ Simple bag-of-words loop closure for visual SLAM -
     <span class="n">image</span><span class="p">,</span> <span class="n">cv</span><span class="o">::</span><span class="n">Mat</span><span class="p">(),</span> <span class="n">keypoints</span><span class="p">,</span> <span class="n">descriptors</span><span class="p">);</span>
 </pre></div>
 <p>Directly using the <code>vector&lt;float&gt;</code> as the image representation is not a good idea, since it takes up a lot of space and does not generalize well to new images. To compress it, we borrow an idea from text processing: the <strong>(Visual) Bag of Words (BoW)</strong> representation. First, he feature descriptors are clustered around the words in a <em>visual vocabulary</em>. The clustering reduces the problem to a matter of <strong>counting</strong> how many times each word in the vocabulary occurs in the original <code>vector&lt;float&gt;</code>. Finally, the image can be represented using the resulting <strong>histogram</strong> of frequencies, as shown in the following diagram:</p>
-<p><img alt="BoW representation" class="img-center" src="http://nicolovaligi.com/bag_of_words.png" style="max-width: 600px"/></p>
+<p><img alt="BoW representation" class="img-center" src="//nicolovaligi.com/bag_of_words.png" style="max-width: 600px"/></p>
 <p>The vocabulary is trained beforehand using k-means clustering and a large dataset of images.</p>
 <h2>Testing on a real dataset</h2>
 <p>The <a href="http://www.robots.ox.ac.uk/~mobile/IJRR_2008_Dataset/">"New College" dataset</a> from the authors of FAB-MAP is a great dataset to use for benchmarking SLAM loop closure, since it provides ground-truth scene correspondences kindly contributed by humans.</p>
 <p>For the implementation, I've used OpenCV and the <a href="https://github.com/dorian3d/DBoW2">DBoW2 library</a> that's also used by ORB-SLAM2. I've set up a simple C++ project <a href="https://github.com/nicolov/simple_slam_loop_closure">here</a> that loads the images and computes the image-level similarity.</p>
 <p>To compare the performance of the program to ground-truth, we can define a <strong>confusion matrix</strong>, whose element <span class="math">\(i,j\)</span> is defined as the vector distance between the representations of images <span class="math">\(i\)</span> and <span class="math">\(j\)</span>. Small values of <span class="math">\(C_{i,j}\)</span> mean that the images <span class="math">\(i\)</span> and <span class="math">\(j\)</span> are similar and thus potential loop closure candidates. That's what we get by plotting the confusion matrices side by side:</p>
-<p><img alt="Confusion matrix compared to ground truth" class="img-center" src="http://nicolovaligi.com/confusion_matrix.png" style="max-width: 500px"/></p>
+<p><img alt="Confusion matrix compared to ground truth" class="img-center" src="//nicolovaligi.com/confusion_matrix.png" style="max-width: 500px"/></p>
 <p>As expected, the BoW-based confusion matrix is fuzzier than the binary ground-truth, but still matches quite well. In real applications, these raw scores would be post-processed to reduce false positives. For example, geometric and visibility constraints can be used to exclude some candidates and improve the reliability of the system. These techniques can be applied to any descriptor though, so discussing them is out of topic when it comes to BoW representations.</p>
 <h2>The precision-recall curve</h2>
 <p>Watching fuzzy dots on an heatmap is obviously not the best way to evaluate loop closure. Since loop closure can naturally be framed as a <strong>classification problem</strong>, we can plot a <strong>precision-recall curve</strong> (PR curve) to better quantify the performance of the system.</p>
@@ -137,7 +137,7 @@ $$</div>
 \textrm{recall} = \frac{\textrm{Number of correctly detected closures}}{\textrm{True number of closures in the ground truth}}
 $$</div>
 <p>Precision and recall are usually plotted on the x and y axes of a scatter plot to highlight their inverse relationship:</p>
-<p><img alt="Precision-recall curve for the BoW approach" class="img-center" src="http://nicolovaligi.com/prec_recall_curve.png" style="max-width: 500px"/></p>
+<p><img alt="Precision-recall curve for the BoW approach" class="img-center" src="//nicolovaligi.com/prec_recall_curve.png" style="max-width: 500px"/></p>
 <p>In this case, I explored the PR tradeoff by changing the threshold value applied to the scalar distance computed between BoW representations. Lowering the threshold makes the system more liberal in reporting loop closures, leading to higher recall but correspondingly low precision (loads of false positives).</p>
 <h2>Conclusions</h2>
 <p>This simple vision-only system performs pretty badly and would definitely need help from geometric and temporal constraints to use in a real SLAM system. However, it will be an useful benchmark for further research.</p>
@@ -199,9 +199,9 @@ $$</div>
   </div>
   <div class="article_meta">
     <p>Posted on: Sun 18 September 2016</p>
-    <p>Category: <a href="http://nicolovaligi.com/category/2016-09-18-simple-loop-closure.html">2016-09-18-simple-loop-closure</a>
+    <p>Category: <a href="//nicolovaligi.com/category/2016-09-18-simple-loop-closure.html">2016-09-18-simple-loop-closure</a>
  &ndash; Tags:
-      <a href="http://nicolovaligi.com/tag/computer-vision.html">computer vision</a>,      <a href="http://nicolovaligi.com/tag/robotics.html">robotics</a>    </p>
+      <a href="//nicolovaligi.com/tag/computer-vision.html">computer vision</a>,      <a href="//nicolovaligi.com/tag/robotics.html">robotics</a>    </p>
   </div>
 
 
