@@ -3,11 +3,11 @@
 
 <head>
   <!-- ## for client-side less
-  <link rel="stylesheet/less" type="text/css" href="http://nicolovaligi.com/theme/css/style.less">
+  <link rel="stylesheet/less" type="text/css" href="//nicolovaligi.com/theme/css/style.less">
   <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
   -->
-  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/style.css">
-  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="//nicolovaligi.com/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="//nicolovaligi.com/theme/css/pygments.css">
   <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 
@@ -38,10 +38,10 @@ Car speed estimation from a windshield camera -
 <body>
   <aside>
     <div id="user_meta">
-      <a href="http://nicolovaligi.com">
+      <a href="//nicolovaligi.com">
         <img src="/blog/images/logo_white.jpg" alt="logo">
       </a>
-      <h2><a href="http://nicolovaligi.com">Nicolò Valigi</a></h2>
+      <h2><a href="//nicolovaligi.com">Nicolò Valigi</a></h2>
       <p>Software Engineer at Cruise Automation. I write about software and machine learning.</p>
       <ul class="links">
         <li><a href="/pages/robotics-for-developers-tutorial.html">Robotics for developers</a></li>
@@ -76,15 +76,15 @@ Car speed estimation from a windshield camera -
   <main>
     <header>
       <p>
-      <a href="http://nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
-      <a href="http://nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
-      <a href="http://nicolovaligi.com/archives.html">Archives</a>
+      <a href="//nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="//nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="//nicolovaligi.com/archives.html">Archives</a>
       </p>
     </header>
 
 <article>
   <div class="article_title">
-    <h1><a href="http://nicolovaligi.com/car-speed-estimation-windshield-camera.html">Car speed estimation from a windshield camera</a></h1>
+    <h1><a href="//nicolovaligi.com/car-speed-estimation-windshield-camera.html">Car speed estimation from a windshield camera</a></h1>
   </div>
   <div class="article_text">
     <p>Measuring the speed of car by capturing images from a windshield camera is a
@@ -131,7 +131,7 @@ between the camera and the scene. When optical flow is computed for individual
 features across the frame, it shows up as <em>vectors</em> that are tangent to the
 apparent motion of the feature in the frame. Here's an example:</p>
 <p><img alt="Example of optical
-flow tracks." class="img-center" src="http://nicolovaligi.com/oflow_sample.jpg" style="max-width: 600px"/></p>
+flow tracks." class="img-center" src="//nicolovaligi.com/oflow_sample.jpg" style="max-width: 600px"/></p>
 <p>Monocular optical flow suffers from the same ambiguity problems that we
 discussed above, and is thus not enough to estimate metric speed. We'll need to
 <strong>make more assumptions</strong> about the structure of the scene.</p>
@@ -156,7 +156,7 @@ velocity. In hindsight, this made sense as errors in the flow estimation vastly
 outweighted the small contributions due to camera rotations. That's how the
 resulting flow looks like in theory:</p>
 <p><img alt="Example of optical
-flow tracks." class="img-center" src="http://nicolovaligi.com/flow_example.png" style="max-width: 400px"/></p>
+flow tracks." class="img-center" src="//nicolovaligi.com/flow_example.png" style="max-width: 400px"/></p>
 <p>Under this final assumption, we only need ground-truth data to calibrate the
 <span class="math">\(hf\)</span> factor, which incorporates the effect of the focal length of the camera and
 its height over ground.</p>
@@ -171,7 +171,7 @@ cropping and masking almost sort-of partially worked on the dataset I had. A
 more robust system would use a real image segmentation algorithm to filter out
 the road points. Here's an example of the map I've used:</p>
 <p><img alt="Example of optical
-flow tracks." class="img-center" src="http://nicolovaligi.com/mask.png" style="max-width: 600px; border: 2px solid black;"/></p>
+flow tracks." class="img-center" src="//nicolovaligi.com/mask.png" style="max-width: 600px; border: 2px solid black;"/></p>
 <p>The top rectangle blocks out detection in areas where other cars are likely to
 appear, while the area on the right improves estimation quality by discarding
 the flow from buildings and other disturbances.</p>
@@ -186,7 +186,7 @@ expected for a real vehicle).</p>
 <p>As you can see below, the results are decent at low speeds, but deteriorate
 quite a lot at highway speeds. That's probably due to very bad optical flow
 tracking on the highway images, on which very few features were tracked at all.</p>
-<p><img alt="Speed estimation results." class="img-center" src="http://nicolovaligi.com/result.png" style="max-width: 600px;"/></p>
+<p><img alt="Speed estimation results." class="img-center" src="//nicolovaligi.com/result.png" style="max-width: 600px;"/></p>
 <p>I should also implement outlier rejection for the flow vectors, as that should
 reduce noise and allow reducing the strength of the low-pass filter to speed up
 the dynamic response. Some more improvement ideas are described in <a href='#Barbosa2007' id='ref-Barbosa2007-1'>Barbosa and Silva (2007)</a>.</p>
@@ -257,9 +257,9 @@ The use of optical flow for road navigation.
   </div>
   <div class="article_meta">
     <p>Posted on: Tue 01 November 2016</p>
-    <p>Category: <a href="http://nicolovaligi.com/category/2016-11-01-speed-estimation.html">2016-11-01-speed-estimation</a>
+    <p>Category: <a href="//nicolovaligi.com/category/2016-11-01-speed-estimation.html">2016-11-01-speed-estimation</a>
  &ndash; Tags:
-      <a href="http://nicolovaligi.com/tag/computer-vision.html">computer vision</a>,      <a href="http://nicolovaligi.com/tag/self-driving-cars.html">self-driving cars</a>    </p>
+      <a href="//nicolovaligi.com/tag/computer-vision.html">computer vision</a>,      <a href="//nicolovaligi.com/tag/self-driving-cars.html">self-driving cars</a>    </p>
   </div>
 
 

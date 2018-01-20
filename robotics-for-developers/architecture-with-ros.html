@@ -3,11 +3,11 @@
 
 <head>
   <!-- ## for client-side less
-  <link rel="stylesheet/less" type="text/css" href="http://nicolovaligi.com/theme/css/style.less">
+  <link rel="stylesheet/less" type="text/css" href="//nicolovaligi.com/theme/css/style.less">
   <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
   -->
-  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/style.css">
-  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="//nicolovaligi.com/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="//nicolovaligi.com/theme/css/pygments.css">
   <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 
@@ -38,10 +38,10 @@ Robotics for developers 2/6: architecting SLAM with ROS -
 <body>
   <aside>
     <div id="user_meta">
-      <a href="http://nicolovaligi.com">
+      <a href="//nicolovaligi.com">
         <img src="/blog/images/logo_white.jpg" alt="logo">
       </a>
-      <h2><a href="http://nicolovaligi.com">Nicolò Valigi</a></h2>
+      <h2><a href="//nicolovaligi.com">Nicolò Valigi</a></h2>
       <p>Software Engineer at Cruise Automation. I write about software and machine learning.</p>
       <ul class="links">
         <li><a href="/pages/robotics-for-developers-tutorial.html">Robotics for developers</a></li>
@@ -76,15 +76,15 @@ Robotics for developers 2/6: architecting SLAM with ROS -
   <main>
     <header>
       <p>
-      <a href="http://nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
-      <a href="http://nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
-      <a href="http://nicolovaligi.com/archives.html">Archives</a>
+      <a href="//nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="//nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="//nicolovaligi.com/archives.html">Archives</a>
       </p>
     </header>
 
 <article>
   <div class="article_title">
-    <h1><a href="http://nicolovaligi.com/robotics-for-developers/architecture-with-ros.html">Robotics for developers 2/6: architecting SLAM with ROS</a></h1>
+    <h1><a href="//nicolovaligi.com/robotics-for-developers/architecture-with-ros.html">Robotics for developers 2/6: architecting SLAM with ROS</a></h1>
   </div>
   <div class="article_text">
     <p>In the robotics community, the navigation problem we're building towards is commonly called <strong>SLAM</strong> (Simultaneous Localization and Mapping). SLAM refers to the task of building a map of an unknown environment while simultaneously localizing the robot position within it. In the case of visual-based SLAM, the map is a set of <em>landmarks</em>, recognizable features present on the scene that can be easily tracked as the robot moves.</p>
@@ -103,7 +103,7 @@ Robotics for developers 2/6: architecting SLAM with ROS -
 </ul>
 <p>While a general SLAM system is a rather complicated affair that must be tailored its application, our project will take a few shortcuts to make the core ideas clearer.</p>
 <p>For starters, the extraction and association steps can be simplified by using man-made landmarks that can be tracked and identified easily and reliably. We're going to use <strong>fiducial markers</strong>, similar to the QR codes using for data sharing<sup id="fnref:fiducial_slam"><a class="footnote-ref" href="#fn:fiducial_slam" rel="footnote">2</a></sup>. The image below has an example of fiducial markers being used for robotics by Alphabet's Boston Dynamics:</p>
-<p><img alt="Boston Dynamics' robots using fiducial markers" src="http://nicolovaligi.com/robotics-for-developers/boston_dynamics.jpg"/></p>
+<p><img alt="Boston Dynamics' robots using fiducial markers" src="//nicolovaligi.com/robotics-for-developers/boston_dynamics.jpg"/></p>
 <p>Their particular geometric shape takes care of the <em>extraction</em> problem (as it's easy to spot a black square with white borders in a natural scene), while the bits codified within the inner pattern make <em>landmark association</em> trivial.<sup id="fnref:fiducials"><a class="footnote-ref" href="#fn:fiducials" rel="footnote">3</a></sup></p>
 <p>Thanks to the error correction built into the fiducial marker library, we can assume that extraction and association are 100% reliable. However, there's always going to be numerical errors in the exact position of the marker within the camera frame.</p>
 <p>More generally, none of the sensor available for a robot could ever be perfect.
@@ -133,7 +133,7 @@ use the GTSAM project from Georgia Tech due to its clean API and powerful
 abstractions. In GTSAM, all the probabilistic information we have about the
 system is encoded in a <strong>factor graph</strong>.<sup id="fnref:fgraph"><a class="footnote-ref" href="#fn:fgraph" rel="footnote">7</a></sup> The figure below represents the factor
 graph for the problem at hand:</p>
-<p><a href="http://nicolovaligi.com/robotics-for-developers/2_architecture/fgraph_singlemarker.pdf"><img alt="Single marker factor graph" class="img-center" src="http://nicolovaligi.com/__pdf_previews__/robotics-for-developers/2_architecture/fgraph_singlemarker.pdf.png" style="max-width: 400px"/></a></p>
+<p><a href="//nicolovaligi.com/robotics-for-developers/2_architecture/fgraph_singlemarker.pdf"><img alt="Single marker factor graph" class="img-center" src="//nicolovaligi.com/__pdf_previews__/robotics-for-developers/2_architecture/fgraph_singlemarker.pdf.png" style="max-width: 400px"/></a></p>
 <p>The white circles represent the two pieces of the state: one for the marker pose
 and one for the camera's. White circles are connected to black dots that encode
 probabilistic information. We have two here. The one on the bottom represents
@@ -181,7 +181,7 @@ heuristics to solve complex problems quicker than the dumb approach.</p>
 <p>The independent unit of computation in ROS is called a <em>node</em>, which is usually mapped to an OS process. Nodes communicate using TCP-based message passing orchestrated by out-of-band negotiations over XML-RPC. In pratice, we won't worry about these details, as they're taken care of by the <em>ROS client library</em>.</p>
 <p>ROS client libraries abstract message-passing by introducing <code>Publisher</code> and <code>Subscriber</code> objects with convenient APIs. Messages are exchanged over a specific <em>topic</em>, such as <code>/camera/image</code>. All these conventions make it easy (and necessary) to decompose the project in a bunch of communicating processes.<sup id="fnref:ros"><a class="footnote-ref" href="#fn:ros" rel="footnote">4</a></sup></p>
 <p>In the case of our project (at least in its initial iteration), the architecture will look like this:</p>
-<p><a href="http://nicolovaligi.com/robotics-for-developers/2_architecture/architecture.pdf"><img class="img-center" src="http://nicolovaligi.com/__pdf_previews__/robotics-for-developers/2_architecture/architecture.pdf.png" style="max-width: 500px"/></a></p>
+<p><a href="//nicolovaligi.com/robotics-for-developers/2_architecture/architecture.pdf"><img class="img-center" src="//nicolovaligi.com/__pdf_previews__/robotics-for-developers/2_architecture/architecture.pdf.png" style="max-width: 500px"/></a></p>
 <p>When following these patterns, it's easy to swap the camera driver or the localization algorithm, and even run them on different machines (it's pretty common to run the drivers on the onboard computer, but use a stationary workhorse for the more intensive tasks). <sup id="fnref:ros_arch"><a class="footnote-ref" href="#fn:ros_arch" rel="footnote">5</a></sup></p>
 <h2>Next steps</h2>
 <p>In the next post, we are finally going to start laying down some code after introducing the computer vision principles behind visual navigation.</p>
@@ -215,9 +215,9 @@ heuristics to solve complex problems quicker than the dumb approach.</p>
   </div>
   <div class="article_meta">
     <p>Posted on: Fri 29 July 2016</p>
-    <p>Category: <a href="http://nicolovaligi.com/category/2_architecture.html">2_architecture</a>
+    <p>Category: <a href="//nicolovaligi.com/category/2_architecture.html">2_architecture</a>
  &ndash; Tags:
-      <a href="http://nicolovaligi.com/tag/robotics.html">robotics</a>,      <a href="http://nicolovaligi.com/tag/perception.html">perception</a>    </p>
+      <a href="//nicolovaligi.com/tag/robotics.html">robotics</a>,      <a href="//nicolovaligi.com/tag/perception.html">perception</a>    </p>
   </div>
 
 
