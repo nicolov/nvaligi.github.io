@@ -3,11 +3,11 @@
 
 <head>
   <!-- ## for client-side less
-  <link rel="stylesheet/less" type="text/css" href="//nicolovaligi.com/theme/css/style.less">
+  <link rel="stylesheet/less" type="text/css" href="http://nicolovaligi.com/theme/css/style.less">
   <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
   -->
-  <link rel="stylesheet" type="text/css" href="//nicolovaligi.com/theme/css/style.css">
-  <link rel="stylesheet" type="text/css" href="//nicolovaligi.com/theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="http://nicolovaligi.com/theme/css/pygments.css">
   <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 
@@ -38,13 +38,14 @@ Naive Bayes classifiers in TensorFlow -
 <body>
   <aside>
     <div id="user_meta">
-      <a href="//nicolovaligi.com">
+      <a href="http://nicolovaligi.com">
         <img src="/blog/images/logo_white.jpg" alt="logo">
       </a>
-      <h2><a href="//nicolovaligi.com">Nicolò Valigi</a></h2>
-      <p>Chronicles of learning.</p>
+      <h2><a href="http://nicolovaligi.com">Nicolò Valigi</a></h2>
+      <p>Software Engineer at Cruise Automation. I write about software and machine learning.</p>
       <ul class="links">
-        <li><a href="//nicolovaligi.com/pages/tutorial-on-robotics-for-developers.html">Tutorial on robotics for developers</a></li>
+        <li><a href="/pages/robotics-for-developers-tutorial.html">Robotics for developers</a></li>
+        <li><a href="/pages/research.html">Research</a></li>
       </ul>
 
       <ul style="padding-left: 0;
@@ -75,18 +76,18 @@ Naive Bayes classifiers in TensorFlow -
   <main>
     <header>
       <p>
-      <a href="//nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
-      <a href="//nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
-      <a href="//nicolovaligi.com/archives.html">Archives</a>
+      <a href="http://nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="http://nicolovaligi.com/archives.html">Archives</a>
       </p>
     </header>
 
 <article>
   <div class="article_title">
-    <h1><a href="//nicolovaligi.com/naive-bayes-tensorflow.html">Naive Bayes classifiers in TensorFlow</a></h1>
+    <h1><a href="http://nicolovaligi.com/naive-bayes-tensorflow.html">Naive Bayes classifiers in TensorFlow</a></h1>
   </div>
   <div class="article_text">
-    <p><img class="img-center" src="//nicolovaligi.com/tf_iris.png" style="max-width: 70%"/></p>
+    <p><img class="img-center" src="http://nicolovaligi.com/tf_iris.png" style="max-width: 70%"/></p>
 <p>Naive Bayes classifiers deserve their place in Machine Learning 101 as one of
 the simplest and fastest algorithms for classification. This post explains a
 very straightforward implementation in TensorFlow that I created as part of a
@@ -139,7 +140,7 @@ probabilities. An intuitive and very common strategy is *<em>Maximum a Posterior
 <span class="n">gnb</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 </pre></div>
 <p>This is how a plot of the 3 first principal components looks like in 3D:</p>
-<p><img class="img-center" src="//nicolovaligi.com/iris_pca.png" style="max-width: 70%"/></p>
+<p><img class="img-center" src="http://nicolovaligi.com/iris_pca.png" style="max-width: 70%"/></p>
 <h2>TensorFlow implementation</h2>
 <p>You may want to follow along with the actual code <a href="https://github.com/nicolov/naive_bayes_tensorflow/blob/master/tf_iris.py">here</a>.</p>
 <h3>Training</h3>
@@ -202,7 +203,7 @@ because of numerical issues (see <a href="https://www.xarg.org/2016/06/the-log-s
 <div class="highlight"><pre><span></span><span class="n">probs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_prob</span><span class="p">)</span>
 </pre></div>
 <p>By feeding in a grid of points and drawing the contour lines at 0.5 probability, we get the nice plot at the top:</p>
-<p><img class="img-center" src="//nicolovaligi.com/tf_iris.png" style="max-width: 70%"/></p>
+<p><img class="img-center" src="http://nicolovaligi.com/tf_iris.png" style="max-width: 70%"/></p>
 <h2>Conclusion</h2>
 <p>Building a simple Naive Bayes classifier in TensorFlow is a good learning
 exercise to get familiar with TensorFlow's probability distributions and
@@ -270,9 +271,9 @@ practice the less common tensor operations.</p>
   </div>
   <div class="article_meta">
     <p>Posted on: Sun 05 November 2017</p>
-    <p>Category: <a href="//nicolovaligi.com/category/2017-11-05-naive-bayes-tensorflow.html">2017-11-05-naive-bayes-tensorflow</a>
+    <p>Category: <a href="http://nicolovaligi.com/category/2017-11-05-naive-bayes-tensorflow.html">2017-11-05-naive-bayes-tensorflow</a>
  &ndash; Tags:
-      <a href="//nicolovaligi.com/tag/tensorflow.html">tensorflow</a>,      <a href="//nicolovaligi.com/tag/machine-learning.html">machine-learning</a>    </p>
+      <a href="http://nicolovaligi.com/tag/tensorflow.html">tensorflow</a>,      <a href="http://nicolovaligi.com/tag/machine-learning.html">machine-learning</a>    </p>
   </div>
 
 
