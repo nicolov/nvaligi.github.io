@@ -34,12 +34,14 @@ SOCIAL = (('You can add links in your config file', '#'),
           ('Another social link', '#'),)
 '''
 
-'''
+DISPLAY_PAGES_ON_MENU = False
+
 MENUITEMS = (
-    ('About', '/pages/about.html'),
-    ('CV', '/pages/cv.html'),
+	('Robotics for developers', '/pages/robotics-for-developers-tutorial.html'),
+	('Research', '/pages/research.html'),
+    # ('About', '/pages/about.html'),
+    # ('CV', '/pages/cv.html'),
 )
-'''
 
 LINKS = []
 SOCIAL = []
@@ -52,7 +54,7 @@ RELATIVE_URLS = True
 MD_EXTENSIONS = ['codehilite(css_class=highlight)','extra']
 
 PATH = 'content'
-STATIC_PATHS = ['blog', 'robotics-for-developers', 'extra/CNAME']
+STATIC_PATHS = ['blog', 'pages', 'robotics-for-developers', 'extra/CNAME']
 ARTICLE_PATHS = ['blog', 'robotics-for-developers']
 ARTICLE_EXCLUDES = ['blog/ignore']
 PAGE_PATHS = ['pages']
@@ -72,7 +74,7 @@ PLUGINS = ["render_math", "pdf-img", "pelican-cite", "pelican-ipynb.markup"]
 
 # svbhack
 USER_LOGO_URL = '/blog/images/logo_white.jpg'
-TAGLINE = """Chronicles of learning."""
+TAGLINE = """Software Engineer at Cruise Automation. I write about software and machine learning."""
 
 # Get ipython notebooks summary from the meta file
 IPYNB_USE_META_SUMMARY = True

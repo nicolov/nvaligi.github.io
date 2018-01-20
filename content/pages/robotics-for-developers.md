@@ -1,4 +1,5 @@
 Title: Tutorial on robotics for developers
+Slug: robotics-for-developers-tutorial
 
 I've written a project-based tutorial to introduce other developers to the exciting world of robotics software. By the end of it, you'll have created a fairly complete SLAM system that uses cameras and IMUs for localizing a robot.
 
