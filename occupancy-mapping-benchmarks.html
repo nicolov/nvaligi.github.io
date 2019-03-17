@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- ## for client-side less
+  <link rel="stylesheet/less" type="text/css" href="//nicolovaligi.com/theme/css/style.less">
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
+  -->
+  <link rel="stylesheet" type="text/css" href="//nicolovaligi.com/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="//nicolovaligi.com/theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Nicolò Valigi">
+  <meta name="description" content="Posts and writings by Nicolò Valigi">
+
+
+<meta name="keywords" content="robotics, navigation">
+
+  <title>
+Benchmarking Occupancy Mapping libraries -
+    Nicolò Valigi
+  </title>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-67820015-1', 'auto');
+  ga('send', 'pageview');
+
+</script></head>
+
+<body>
+  <aside>
+    <div id="user_meta">
+      <a href="//nicolovaligi.com">
+        <img src="/blog/images/logo_white.jpg" alt="logo">
+      </a>
+      <h2><a href="//nicolovaligi.com">Nicolò Valigi</a></h2>
+      <p>Software Engineer at Cruise Automation. I write about software and machine learning.</p>
+      <ul class="links">
+        <li><a href="/pages/robotics-for-developers-tutorial.html">Robotics for developers</a></li>
+        <li><a href="/pages/research.html">Research</a></li>
+      </ul>
+
+      <ul style="padding-left: 0;
+                 margin-left: -5px;
+                 list-style: none;
+                 text-align: center;">
+        <li>
+            <a href="https://github.com/nicolov">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+        <li>
+            <a href="mailto:nicolo.valigi@gmail.com">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-envelope fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+    </ul>
+
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <p>
+      <a href="//nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="//nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="//nicolovaligi.com/archives.html">Archives</a>
+      </p>
+    </header>
+
+<article>
+  <div class="article_title">
+    <h1><a href="//nicolovaligi.com/occupancy-mapping-benchmarks.html">Benchmarking Occupancy Mapping libraries</a></h1>
+  </div>
+  <div class="article_text">
+    <p>This article looks at the performance of three different 3D Occupancy Mapping
+libraries for Robotics. You can find the code on <a href="https://github.com/nicolov/occupancy_mapping_benchmarks">my
+GitHub</a>, together
+with a CI configuration that builds and runs the tests in the cloud.</p>
+<p><img class="img-center" src="//nicolovaligi.com/occupancy_map_structure.png" style="max-width: 80%"/></p>
+<p>Robots that navigate in unknown environments need to figure out where obstacles
+are. Perhaps the most common way to do this is with <strong>Occupancy Maps</strong>, where
+the environment is discretized in a grid with fixed resolution (say, 0.05
+meters). As the robot moves around, each <em>voxel</em> is marked as occupied or free
+based on sensor measurements. In most applications, the belief of the state of
+each voxel is updated probabilistically by integrating sensor data, be it LIDAR
+or RGBD cameras. In this article, we're not going to focus on how to implement
+this probabilistic model, but only on the <em>data structures</em> that can be used to
+efficiently store the occupancy map.</p>
+<h2>The requirements</h2>
+<p>The most basic requirement for a grid data structure is to be able to set,
+store, and retrieve data that is linked to a specific position <span class="math">\((x, y, z)\)</span> in
+the world frame. This is easy enough to implement by storing values in a 3D
+array with the desired voxel size (depending on the precision required in the
+application). However, typical values for the voxel size (0.05 to 0.2 meters)
+require insane amounts of memory. Luckily, it just so happens that most of the
+space in the environment is free, so we can be a bit smarter and avoid wasting
+any memory on it. One way or another, all three of the libraries considered in
+this article take advantage of this.</p>
+<p>In most situations, the size of the environment is not known at the beginning of
+the mission. Data structures should allow inserting data at arbitrary positions,
+without the need for resizing or costly copies of data. This requirement might
+seem trivial, but it's easy to see how it's not satisfied by the fixed-size 3D
+array introduced in the previous sections (reallocations and copies would be
+needed to increase the size of the map).</p>
+<p>From the point of view of computation costs, there are two main use cases we
+want to consider:</p>
+<ul>
+<li>
+<p>during mapping, the occupancy grid must be updated according to incoming
+  sensor measurements. Both LIDARs and RGBD cameras measure the distance of a
+  world point P from the sensor. A trivial model would assume that all world
+  points on the line from the sensor center all the way to the P should be
+  marked as free. Likewise, P should be marked as occupied. In the real world,
+  measurements are affected by error and noise, which are usually tackled with a
+  probabilistic model (usually a Binary Bayes filter in log odds form for
+  convenience). In this article, we're not really concerned with this
+  probabilistic models, since they can be applied to all data structures. We're
+  just going to be simulating sensor updates by associating a floating point
+  value with each voxel.</p>
+</li>
+<li>
+<p>during planning, the map is queried to avoid obstacles and find free space
+  where the planner can direct the robot. While query patterns vary depending on
+  the chosen planning algorithm, a typical request might be to find all occupied
+  voxels within a certain distance of the robot.</p>
+</li>
+</ul>
+<h2>The contestants</h2>
+<p>I've written code to compare the performance of three open-source libraries that
+implement datastructures for occupancy mapping:</p>
+<ul>
+<li><a href="https://octomap.github.io/">OctoMap</a></li>
+<li><a href="https://github.com/m4nh/skimap_ros">SkiMap</a></li>
+<li><a href="https://www.openvdb.org/">OpenVDB</a></li>
+</ul>
+<p>Since all three libraries satisfy the common requirements introduced in the
+previous section, we're just going to describe why they are unique.</p>
+<p><strong>OctoMap</strong> is a very commonly used library whose paper dates back to 2010. It
+pretty much is a textbook application of <em>octrees</em>, a hierarchical tree-based
+structure where 3D space is recursively divided in smaller portions. Since
+recursion can be stopped when the required voxel size is reached, the complexity
+of the look-up is bounded to constant-time. By taking advantage of the tree
+structure, mapping free space takes up less memory. Since the library is tailored to
+Robotics applications, it's really easy to integrate into an existing stack.</p>
+<p><strong>SkiMap</strong> is another Robotics-focused library with the explicit aim of being a
+faster alternative to OctoMap. Instead of octotrees, it uses <em>skiplists</em>, a
+fancy datastructure that combines some of the advantages of linked list
+(constant-time insertion at any point of the list) with those of arrays
+(constant-time next-element lookup) and hash tables (constant-time lookups of
+arbitrary elements).</p>
+<p><strong>OpenVDB</strong> is the only library here that has won an Academy Award! It hails
+from the Computer Graphics world, where it's used to store and manipulate the
+large amount of particles that are used when rendering animated movies. Even if
+it's not widely used in Robotics, its core value proposition is ideal for
+occupancy mapping: <em>"a hierarchical data structure and a suite of tools for the
+efficient manipulation of sparse, possibly time-varying, volumetric data
+discretized on a three-dimensional grid.</em> I found <a href="https://www.youtube.com/watch?v=7hUH92xwODg">this Youtube
+video</a> to be a good resource in
+understanding what makes the underlying data structure so unique.</p>
+<h2>Results</h2>
+<p>While the same concepts apply to both (3D) LIDAR mapping and RGBD dataset, I'm
+more interested in the latter and decided to use data from the well-known <a href="https://vision.in.tum.de/data/datasets/rgbd-dataset">TUM
+RGBD dataset</a>. Images are
+recorded with a Microsoft Kinect sensor (active infrared with a 640x480
+resolution). Luckily, the data already comes with ground trajectories, so we can
+focus on the mapping aspect of SLAM, without having to worry about localization.</p>
+<p>I wrote <a href="https://github.com/nicolov/occupancy_mapping_benchmarks">some simple
+code</a> to simulate
+inserting the point clouds into the occupancy map, using the same settings for
+all three libraries. The measurement model is really simple: each <span class="math">\((x, y, z)\)</span>
+point is first transformed from the camera frame into the world frame (using the
+ground-truth trajectory in the dataset), and marked as occupied in the occupancy
+map. As mentioned earlier, in the real world you would probably want to adopt a
+probabilistic measurement model to account for noise. For this dataset, even
+this primitive approach works fine, as the underlying data is pretty clean. We
+can use OctoMap's visualization tool, <code>octovis</code> to visualize the resulting map:</p>
+<p><img class="img-center" src="//nicolovaligi.com/occupancy_map.png" style="max-width: 80%"/></p>
+<p>If you squint hard enough, you can see the desk in the center of the room. This
+map was generated from the
+<code>rgbd_dataset_freiburg3_long_office_household-2hz-with-pointclouds.bag</code> file (available <a href="https://vision.in.tum.de/data/datasets/rgbd-dataset/download#freiburg3_long_office_household">here</a>,
+which contains 165 depth images recorded over 85 seconds. <code>octovis</code> also allows us to choose which octotree level to render. For example,
+we can look at larger voxels:</p>
+<p><img class="img-center" src="//nicolovaligi.com/occupancy_map_lowres.png" style="max-width: 80%"/></p>
+<p>As expected, the result is the same for all three libraries. More interestingly,
+here are the running times:</p>
+<p><img class="img-center" src="//nicolovaligi.com/plot.png" style="max-width: 80%"/></p>
+<p>Or in table form:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Library</th>
+<th align="right">Runtime [sec]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">SkiMap</td>
+<td align="right">4.42933</td>
+</tr>
+<tr>
+<td align="left">OctoMap</td>
+<td align="right">3.9841</td>
+</tr>
+<tr>
+<td align="left">OpenVDB</td>
+<td align="right">2.25164</td>
+</tr>
+</tbody>
+</table>
+<h2>Conclusion</h2>
+<p>OpenVDB does live up to its promise of being well optimized, clocking almost
+twice as fast as OctoMap. SkiMap is somewhat competitive with OctoMap, while
+being less mature and a significantly simpler implementation. In a follow-up
+article, I'll add new benchmarks to test some common query patterns that would
+be useful for planning trajectories in the generated occupancy map.</p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+    mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>
+  </div>
+  <div class="article_meta">
+    <p>Posted on: Sun 17 March 2019</p>
+    <p>Category: <a href="//nicolovaligi.com/category/2019-03-17-occupancy-mapping-benchmarks.html">2019-03-17-occupancy-mapping-benchmarks</a>
+ &ndash; Tags:
+      <a href="//nicolovaligi.com/tag/robotics.html">robotics</a>,      <a href="//nicolovaligi.com/tag/navigation.html">navigation</a>    </p>
+  </div>
+
+
+</article>
+
+
+    <div id="ending_message">
+      <p>&copy; Nicolò Valigi. Built using <a href="http://getpelican.com" target="_blank">Pelican</a>. Theme originally by Giulio Fidente on <a href="https://github.com/gfidente/pelican-svbhack" target="_blank">github</a>. </p>
+    </div>
+  </main>
+</body>
+</html>
