@@ -46,9 +46,11 @@ chain rule:
 $$ p(C_k, \mathbf{x}) = p(x_1 | x_2, ..., x_n, C_k)p(x_2 | x_3, .., x_n, C_k)p(x_n | C_k)p(C_k) $$
 
 By the *naive* assumption, the reciprocal conditioning among features can be
-dropped, and we get:
+dropped. In other words, we assume that the value assumed by each feature depends
+on the class only, and not on the values assumed by the other features. This
+means that we can simplify the previous formula quite a bit:
 
-$$ p(C_k, \mathbf{x}) = p(x_1)p(x_2)...p(x_n)p(C_k) $$
+$$ p(C_k, \mathbf{x}) = p(x_1 | C_k)p(x_2 | C_k)...p(x_n | C_k)p(C_k) $$
 
 Going back to Bayes' theorem, we observe that we can discard the denominator
 since it's just a normalization factor that doesn't depend on the class. We
@@ -123,7 +125,7 @@ nb_features)`.
 For inference, it's important to work in the **log** probability space to avoid
 numerical errors due to repeated multiplication of small probabilities. We have:
 
-$$ \log p(C_k | \mathbf{x}) = \log p(C_k) + \sum_{i=1}^n P(\mathbf{x} | C_k) $$
+$$ \log p(C_k | \mathbf{x}) = \log p(C_k) + \sum_{i=1}^n \log p(\mathbf{x} | C_k) $$
 
 To take care of the first term, we can assume that all classes are equally
 likely (i.e. **uniform** prior):
@@ -137,7 +139,7 @@ the distribution in a single run:
 
 ```py
 # (nb_samples, nb_classes, nb_features)
-all_log_probs = self.dist.lob_prob(
+all_log_probs = self.dist.log_prob(
     tf.reshape(
         tf.tile(X, [1, nb_classes]), [-1, nb_classes, nb_features]))
 ```

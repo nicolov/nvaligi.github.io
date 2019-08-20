@@ -4,13 +4,13 @@ from __future__ import unicode_literals
 
 import os
 
-AUTHOR = u'Nicolò Valigi'
-SITENAME = u'Nicolò Valigi'
-SITEURL = 'http://nicolovaligi.com'
+AUTHOR = "Nicolò Valigi"
+SITENAME = "Nicolò Valigi"
+SITEURL = "https://nicolovaligi.com"
 
-TIMEZONE = 'Europe/Rome'
+TIMEZONE = "Europe/Rome"
 
-DEFAULT_LANG = u'en'
+DEFAULT_LANG = "en"
 
 # Feed generation is usually not desired when developing
 FEED_ALL_ATOM = None
@@ -18,29 +18,17 @@ CATEGORY_FEED_ATOM = None
 TRANSLATION_FEED_ATOM = None
 AUTHOR_FEED_ATOM = None
 AUTHOR_FEED_RSS = None
-AUTHOR_SAVE_AS = ''
-CATEGORY_SAVE_AS = ''
+AUTHOR_SAVE_AS = ""
+CATEGORY_SAVE_AS = ""
 
 # Blogroll
-
-'''
-LINKS = (('Pelican', 'http://getpelican.com/'),
-         ('Python.org', 'http://python.org/'),
-         ('Jinja2', 'http://jinja.pocoo.org/'),
-         ('You can modify those links in your config file', '#'),)
-
-# Social widget
-SOCIAL = (('You can add links in your config file', '#'),
-          ('Another social link', '#'),)
-'''
 
 DISPLAY_PAGES_ON_MENU = False
 
 MENUITEMS = (
-	('Robotics for developers', '/pages/robotics-for-developers-tutorial.html'),
-	('Research', '/pages/research.html'),
-    # ('About', '/pages/about.html'),
-    # ('CV', '/pages/cv.html'),
+    ("Talks", "/pages/talks.html"),
+    ("Robotics for developers", "/pages/robotics-for-developers-tutorial.html"),
+    ("Research", "/pages/research.html"),
 )
 
 LINKS = []
@@ -51,30 +39,28 @@ DEFAULT_PAGINATION = 11
 # This will get over-written by publishconf.py
 RELATIVE_URLS = True
 
-MD_EXTENSIONS = ['codehilite(css_class=highlight)','extra']
+MD_EXTENSIONS = ["codehilite(css_class=highlight)", "extra"]
 
-PATH = 'content'
-STATIC_PATHS = ['blog', 'pages', 'robotics-for-developers', 'extra/CNAME']
-ARTICLE_PATHS = ['blog', 'robotics-for-developers']
-ARTICLE_EXCLUDES = ['blog/ignore']
-PAGE_PATHS = ['pages']
-EXTRA_PATH_METADATA = {
-        'extra/CNAME': {'path': 'CNAME'},
-}
+PATH = "content"
+STATIC_PATHS = ["blog", "pages", "robotics-for-developers", "extra/CNAME"]
+ARTICLE_PATHS = ["blog", "robotics-for-developers"]
+ARTICLE_EXCLUDES = ["blog/ignore"]
+PAGE_PATHS = ["pages"]
+EXTRA_PATH_METADATA = {"extra/CNAME": {"path": "CNAME"}}
 
 current_folder = os.path.dirname(os.path.abspath(__file__))
-THEME = os.path.join(current_folder, 'pelican-svbhack')
+THEME = os.path.join(current_folder, "pelican-svbhack")
 
-PUBLICATIONS_SRC = 'content/bib.bib'
+PUBLICATIONS_SRC = "content/bib.bib"
 
 SUMMARY_MAX_LENGTH = 30
 
-PLUGIN_PATHS = ['./pelican-plugins']
+PLUGIN_PATHS = ["./pelican-plugins"]
 PLUGINS = ["render_math", "pdf-img", "pelican-cite", "pelican-ipynb.markup"]
 
 # svbhack
-USER_LOGO_URL = '/blog/images/logo_white.jpg'
-TAGLINE = """Software Engineer at Cruise Automation. I write about software and machine learning."""
+USER_LOGO_URL = "/blog/images/logo_white.jpg"
+TAGLINE = """Writing about Software, Robots, and Machine Learning."""
 
 # Get ipython notebooks summary from the meta file
 IPYNB_USE_META_SUMMARY = True
