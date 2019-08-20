@@ -42,8 +42,9 @@ Naive Bayes classifiers in TensorFlow -
         <img src="/blog/images/logo_white.jpg" alt="logo">
       </a>
       <h2><a href="//nicolovaligi.com">Nicolò Valigi</a></h2>
-      <p>Software Engineer at Cruise Automation. I write about software and machine learning.</p>
+      <p>Writing about Software, Robots, and Machine Learning.</p>
       <ul class="links">
+        <li><a href="/pages/talks.html">Talks</a></li>
         <li><a href="/pages/robotics-for-developers-tutorial.html">Robotics for developers</a></li>
         <li><a href="/pages/research.html">Research</a></li>
       </ul>
@@ -118,8 +119,10 @@ probability distribution</em> <span class="math">\(p(C_k, \mathbf{x})\)</span>, 
 chain rule:</p>
 <div class="math">$$ p(C_k, \mathbf{x}) = p(x_1 | x_2, ..., x_n, C_k)p(x_2 | x_3, .., x_n, C_k)p(x_n | C_k)p(C_k) $$</div>
 <p>By the <em>naive</em> assumption, the reciprocal conditioning among features can be
-dropped, and we get:</p>
-<div class="math">$$ p(C_k, \mathbf{x}) = p(x_1)p(x_2)...p(x_n)p(C_k) $$</div>
+dropped. In other words, we assume that the value assumed by each feature depends
+on the class only, and not on the values assumed by the other features. This
+means that we can simplify the previous formula quite a bit:</p>
+<div class="math">$$ p(C_k, \mathbf{x}) = p(x_1 | C_k)p(x_2 | C_k)...p(x_n | C_k)p(C_k) $$</div>
 <p>Going back to Bayes' theorem, we observe that we can discard the denominator
 since it's just a normalization factor that doesn't depend on the class. We
 get:</p>
@@ -167,7 +170,7 @@ nb_features)</code>.</p>
 <h3>Inference</h3>
 <p>For inference, it's important to work in the <strong>log</strong> probability space to avoid
 numerical errors due to repeated multiplication of small probabilities. We have:</p>
-<div class="math">$$ \log p(C_k | \mathbf{x}) = \log p(C_k) + \sum_{i=1}^n P(\mathbf{x} | C_k) $$</div>
+<div class="math">$$ \log p(C_k | \mathbf{x}) = \log p(C_k) + \sum_{i=1}^n \log p(\mathbf{x} | C_k) $$</div>
 <p>To take care of the first term, we can assume that all classes are equally
 likely (i.e. <strong>uniform</strong> prior):</p>
 <div class="highlight"><pre><span></span><span class="n">priors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">nb_classes</span><span class="p">]</span> <span class="o">*</span> <span class="n">nb_classes</span><span class="p">))</span>
@@ -175,7 +178,7 @@ likely (i.e. <strong>uniform</strong> prior):</p>
 <p>To compute the sum in the second term, we duplicate (<em>tile</em>) the feature vectors along a new "class" dimension, so that we can get probabilities from
 the distribution in a single run:</p>
 <div class="highlight"><pre><span></span><span class="c1"># (nb_samples, nb_classes, nb_features)</span>
-<span class="n">all_log_probs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="o">.</span><span class="n">lob_prob</span><span class="p">(</span>
+<span class="n">all_log_probs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span>
     <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
         <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">nb_classes</span><span class="p">]),</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">nb_classes</span><span class="p">,</span> <span class="n">nb_features</span><span class="p">]))</span>
 </pre></div>
@@ -270,7 +273,7 @@ practice the less common tensor operations.</p>
 </script>
   </div>
   <div class="article_meta">
-    <p>Posted on: Sun 05 November 2017</p>
+    <p>Posted on: dom 05 novembre 2017</p>
     <p>Category: <a href="//nicolovaligi.com/category/2017-11-05-naive-bayes-tensorflow.html">2017-11-05-naive-bayes-tensorflow</a>
  &ndash; Tags:
       <a href="//nicolovaligi.com/tag/tensorflow.html">tensorflow</a>,      <a href="//nicolovaligi.com/tag/machine-learning.html">machine-learning</a>    </p>
