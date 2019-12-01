@@ -5,3 +5,5 @@
 *.pid
 *.swp
 .DS_Store
+*.aux
+*.log

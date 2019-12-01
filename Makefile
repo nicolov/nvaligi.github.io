@@ -111,4 +111,9 @@ github: publish
 lint:
 	black *.py
 
+.PHONY: cleanlatex
+cleanlatex:
+	find . -name '*.aux' -delete
+	find . -name '*.log' -delete
+
 .PHONY: html help clean regenerate serve devserver publish ssh_upload rsync_upload dropbox_upload ftp_upload s3_upload cf_upload github
