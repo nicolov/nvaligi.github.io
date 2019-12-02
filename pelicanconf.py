@@ -29,6 +29,7 @@ MENUITEMS = (
     ("Talks", "/pages/talks.html"),
     ("Robotics for developers", "/pages/robotics-for-developers-tutorial.html"),
     ("Research", "/pages/research.html"),
+    ("RSS feed", "/feeds/all.atom.xml"),
 )
 
 LINKS = []
