@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- ## for client-side less
+  <link rel="stylesheet/less" type="text/css" href="//nicolovaligi.com/theme/css/style.less">
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.7.3/less.min.js" type="text/javascript"></script>
+  -->
+  <link rel="stylesheet" type="text/css" href="//nicolovaligi.com/theme/css/style.css">
+  <link rel="stylesheet" type="text/css" href="//nicolovaligi.com/theme/css/pygments.css">
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=PT+Sans|PT+Serif|PT+Mono">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Nicolò Valigi">
+  <meta name="description" content="Posts and writings by Nicolò Valigi">
+
+  <link href="//nicolovaligi.com/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Nicolò Valigi Atom" />
+
+<meta name="keywords" content="robotics, frameworks, ROS">
+
+  <title>
+Concurrency and parallelism in ROS 1 and ROS 2 (part 1) -
+    Nicolò Valigi
+  </title>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-67820015-1', 'auto');
+  ga('send', 'pageview');
+
+</script></head>
+
+<body>
+  <aside>
+    <div id="user_meta">
+      <a href="//nicolovaligi.com">
+        <img src="/blog/images/logo_white.jpg" alt="logo">
+      </a>
+      <h2><a href="//nicolovaligi.com">Nicolò Valigi</a></h2>
+      <p>Writing about Software, Robots, and Machine Learning.</p>
+      <ul class="links">
+        <li><a href="/pages/talks.html">Talks</a></li>
+        <li><a href="/pages/robotics-for-developers-tutorial.html">Robotics for developers</a></li>
+        <li><a href="/pages/research.html">Research</a></li>
+        <li><a href="/feeds/all.atom.xml">RSS feed</a></li>
+      </ul>
+
+      <ul style="padding-left: 0;
+                 margin-left: -5px;
+                 list-style: none;
+                 text-align: center;">
+
+        <!-- github -->
+        <li>
+            <a href="https://github.com/nicolov">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+
+        <!-- mail -->
+        <li>
+            <a href="mailto:nicolo.valigi@gmail.com">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-envelope fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+
+        <!-- RSS -->
+        <li>
+            <a href="/feeds/all.atom.xml">
+                <span class="fa-stack fa-lg">
+                    <i class="fa fa-circle fa-stack-2x"></i>
+                    <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                </span>
+            </a>
+        </li>
+
+    </ul>
+
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <p>
+      <a href="//nicolovaligi.com">Index</a> &nbsp; &brvbar; &nbsp;
+      <a href="//nicolovaligi.com/tags.html">Tags</a> &nbsp; &brvbar; &nbsp;
+      <a href="//nicolovaligi.com/archives.html">Archives</a>
+      &brvbar; <a href="//nicolovaligi.com/feeds/all.atom.xml">Atom</a>
+      </p>
+    </header>
+
+<article>
+  <div class="article_title">
+    <h1><a href="//nicolovaligi.com/concurrency-and-parallelism-in-ros1-and-ros2-part-1.html">Concurrency and parallelism in ROS 1 and ROS 2 (part 1)</a></h1>
+  </div>
+  <div class="article_text">
+    <p>Many of the ROS stacks I've worked have had trouble with unexpected latency
+and jitter. These performance issues are often caused by the peculiar way in
+which the framework manages concurrency and parallelism. This article
+discusses the basics of concurrency in ROS 1 and 2, and how to use their APIs
+to get better control over performance.</p>
+<p><em>This article is partially based on my presentation at ROSCon 2019.</em></p>
+<p>The typical ROS stack today is a patchwork of mostly-open-source code running
+in independent nodes, and thus, in separate OS processes. More refined setups
+use <em>nodelets</em> to take advantage of threading and reduce serialization
+overhead. However, it remains true that many stacks leave a lot of performance
+on the table due to sub-optimal use of concurrency primitives. At a human
+level, it seems that there's small intersection between the people who enjoy
+Robotics algorithms and those who like to tinker with Linux threading
+primitives.</p>
+<p>This article is the first of a series that tries to peek under the covers of
+how concurrency works in ROS 1 (and 2) and present tools to improve behavior
+at the application, framework, and OS level. In this first article, we're
+going to look at the application and framework level, essentially describing
+how ROS APIs like callbacks map to OS threads. As such, we're mostly going to
+be focusing on the ROS runtime and application facing APIs. The next article
+is going to continue this journey all the way from OS threads to CPU cores.</p>
+<h2>The basic ROS execution model</h2>
+<p><code>ros::init()</code>, which is the first line of code in any ROS 1 node, spawns a
+couple of threads to manage incoming messages and run the corresponding
+callbacks. As shown below, the <em>network</em> thread listens for incoming messages
+on TCP sockets and pushes them on the <em>callback queue</em> after deserializing
+them. The <em>spinner</em> thread pops messages from the queue and runs the user
+code.</p>
+<p><img class="img-center" src="//nicolovaligi.com/callback_queue.svg" style="max-width: 80%; transform: scale(0.9);"/></p>
+<p>If the callback execution time is short enough, everything runs well even if
+the CPU has a single core. As shown below, messages arrive at a fixed rate and
+wake up the spinner thread, which runs the user-provided code and goes to
+sleep again, well before the next message is expected to come in.</p>
+<p><img class="img-center" src="//nicolovaligi.com/1-single-node.svg" style="max-width: 80%; transform: scale(1.5); padding: 1em;"/></p>
+<p>However, if the callback execution time increases, execution periods would in
+theory begin to overlap with each other. This is clearly impossible on a
+single thread, as only one callback instance can be running at any given time.
+Therefore incoming messages would start to queue up on the subscriber side
+(this is all handled by the ROS runtime, with no intervention of knowledge
+required from users).</p>
+<p><img class="img-center" src="//nicolovaligi.com/2-overlap.svg" style="max-width: 80%; transform: scale(1.5); padding: 1em;"/></p>
+<p>The size of the incoming message queue is set on the <code>subscribe</code> call. A sane
+value might be <code>0</code>, so that no message gets dropped (at the cost of increased
+latency).</p>
+<h2>Multithreaded spinning</h2>
+<p>Dropping messages at the framework level is undesiderable in many cases,
+because the application logic can usually deal with the backlog in smarter
+ways. If indeed that's the case, the hope might be to throw to more hardware
+at the problem. This means running callbacks in parallel (ie <em>spinning</em>) over
+multiple CPU cores.</p>
+<p>In ROS 1, this is achieved by replacing the default <code>ros::spin()</code> call with
+either a <code>MultiThreadedSpinner</code> or an <code>AsyncSpinner</code>:</p>
+<div class="highlight"><pre><span></span><span class="n">ros</span><span class="o">::</span><span class="n">MultiThreadedSpinner</span> <span class="n">spinner</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span> <span class="c1">// 2 threads</span>
+<span class="n">spinner</span><span class="p">.</span><span class="n">spin</span><span class="p">();</span>
+
+<span class="c1">// or</span>
+
+<span class="n">ros</span><span class="o">::</span><span class="n">AsyncSpinner</span> <span class="n">spinner</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+<span class="n">spinner</span><span class="p">.</span><span class="n">start</span><span class="p">();</span>
+</pre></div>
+<p>Both will spawn a number of spinner threads, but <code>MultiThreadedSpinner</code> will
+block the current thread, whereas <code>AsyncSpinner</code> will do all its work in the
+background.</p>
+<p><strong>Side note</strong></p>
+<p>Neither multithreaded spinner actually works as expected in this particular
+example. By default, callback executions are protected by a mutex such that
+only one callback per subscription can execute at any given time. The fix is
+simple:</p>
+<div class="highlight"><pre><span></span><span class="n">ros</span><span class="o">::</span><span class="n">SubscribeOptions</span> <span class="n">ops</span><span class="p">;</span>
+<span class="n">ops</span><span class="p">.</span><span class="k">template</span> <span class="n">init</span><span class="o">&lt;</span><span class="n">std_msgs</span><span class="o">::</span><span class="n">String</span><span class="o">&gt;</span><span class="p">(</span><span class="s">"chatter"</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">chatterCallback</span><span class="p">);</span>
+<span class="n">ops</span><span class="p">.</span><span class="n">allow_concurrent_callbacks</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+<span class="n">ros</span><span class="o">::</span><span class="n">Subscriber</span> <span class="n">sub</span> <span class="o">=</span> <span class="n">nh</span><span class="p">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">ops</span><span class="p">);</span>
+</pre></div>
+<p><strong>End of side note</strong></p>
+<p>With a multithreaded spinner, two or more threads can run callbacks in
+<em>parallel</em>, that is at the same time, provided that there are enough available
+CPU cores in the system. This might increase throughout to the point where
+queueing is avoided, as shown below:</p>
+<p><img class="img-center" src="//nicolovaligi.com/3-multithreaded.svg" style="max-width: 80%; transform: scale(1.5); padding: 1em;"/></p>
+<p>Of course, parallelism brings some headaches in terms of synchronization and
+locking because multiple threads might now be accessing shared state at the
+same time. Sprinkle <code>std::mutex</code> accordingly.</p>
+<h2>Priority inversion</h2>
+<p>Now let's make things a bit more realistic:</p>
+<p><img class="img-center" src="//nicolovaligi.com/4-priority-inversion.svg" style="max-width: 80%; transform: scale(1.5); padding: 1em;"/></p>
+<p>Here we added a second callback (orange) on a second topic. The new callback
+has <em>higher priority</em> than the old one. For example, we might have a planner
+that receives both occupancy map updates and ranging messages for close
+obstacles. If a new ranging message comes in saying that the robot is about to
+crash, the planner should replan right away, rather than queueing up this
+important message behind less time-sensitive occupancy map updates.</p>
+<p>With a plain multi-threaded spinner, the high-priority callback might be stuck
+waiting behind the low-priority (green) one. If this callback is on the
+critical path from sensor to controls, we're increasing the reaction time of
+the robot for no good reason.</p>
+<p>If an orange message arrives within the time segments highlighted with the
+thick black bars, there are no threads available to pick it up, and it will be
+queued behind another lower-priority task. This is exactly what we don't want
+to happen, and is called <strong>priority inversion</strong> in the literature of embedded
+systems.</p>
+<p>One might be tempted to increase the number of worker threads to avoid
+queueing, but that is really just a band-aid, and not a real solution. For
+reasons that we'll discuss in the next article, the number of callback threads
+should track the number of CPU cores, and not the number of independent queues
+in the system.</p>
+<h2>Multiple callback queues</h2>
+<p>A better approach is to divide the callbacks in two or more queues
+according to their priority, create multiple spinner threads, and assign a
+queue to each of the spinners. The easiest way to achieve this in ROS 1 is by
+partitioning subscriptions across different <code>NodeHandle</code>s:</p>
+<div class="highlight"><pre><span></span><span class="c1">// Create a second NodeHandle</span>
+<span class="n">ros</span><span class="o">::</span><span class="n">NodeHandle</span> <span class="n">secondNh</span><span class="p">;</span>
+<span class="n">ros</span><span class="o">::</span><span class="n">CallbackQueue</span> <span class="n">secondQueue</span><span class="p">;</span>
+<span class="n">secondNh</span><span class="p">.</span><span class="n">setCallbackQueue</span><span class="p">(</span><span class="o">&amp;</span><span class="n">secondQueue</span><span class="p">);</span>
+<span class="n">secondNh</span><span class="p">.</span><span class="n">subscribe</span><span class="p">(</span><span class="s">"/high_priority_topic"</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
+                   <span class="n">highPriorityCallback</span><span class="p">);</span>
+</pre></div>
+<div class="highlight"><pre><span></span><span class="c1">// Spawn a new thread for high-priority callbacks.</span>
+<span class="n">std</span><span class="o">::</span><span class="kr">thread</span> <span class="n">prioritySpinThread</span><span class="p">([</span><span class="o">&amp;</span><span class="n">secondQueue</span><span class="p">]()</span> <span class="p">{</span>
+    <span class="n">ros</span><span class="o">::</span><span class="n">SingleThreadedSpinner</span> <span class="n">spinner</span><span class="p">;</span>
+    <span class="n">spinner</span><span class="p">.</span><span class="n">spin</span><span class="p">(</span><span class="o">&amp;</span><span class="n">secondQueue</span><span class="p">);</span>
+<span class="p">});</span>
+<span class="n">prioritySpinThread</span><span class="p">.</span><span class="n">join</span><span class="p">();</span>
+</pre></div>
+<p>The concept is similar in ROS 2, with the <code>Executor</code> interface replacing
+spinners:</p>
+<div class="highlight"><pre><span></span><span class="c1">// Create a Node and an Executor.</span>
+<span class="n">rclcpp</span><span class="o">::</span><span class="n">executors</span><span class="o">::</span><span class="n">SingleThreadedExecutor</span> <span class="n">executor1</span><span class="p">;</span>
+<span class="k">auto</span> <span class="n">node1</span> <span class="o">=</span> <span class="n">rclcpp</span><span class="o">::</span><span class="n">Node</span><span class="o">::</span><span class="n">make_shared</span><span class="p">(</span><span class="s">"node1"</span><span class="p">);</span>
+<span class="n">executor1</span><span class="p">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node1</span><span class="p">);</span>
+
+<span class="c1">// Create another.</span>
+<span class="n">rclcpp</span><span class="o">::</span><span class="n">executors</span><span class="o">::</span><span class="n">SingleThreadedExecutor</span> <span class="n">executor2</span><span class="p">;</span>
+<span class="k">auto</span> <span class="n">node2</span> <span class="o">=</span> <span class="n">rclcpp</span><span class="o">::</span><span class="n">Node</span><span class="o">::</span><span class="n">make_shared</span><span class="p">(</span><span class="s">"node2"</span><span class="p">);</span>
+<span class="n">executor2</span><span class="p">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node2</span><span class="p">);</span>
+
+<span class="c1">// Spin the Executor in a separate thread.</span>
+<span class="n">std</span><span class="o">::</span><span class="kr">thread</span> <span class="n">spinThread</span><span class="p">([</span><span class="o">&amp;</span><span class="n">executor2</span><span class="p">]()</span> <span class="p">{</span>
+    <span class="n">executor2</span><span class="p">.</span><span class="n">spin</span><span class="p">();</span>
+<span class="p">});</span>
+</pre></div>
+<p>With this change, the ROS runtime will assign callbacks from different
+subscriptions to their dedicated spinner threads. Therefore, it's possible to
+make sure that there's always a thread available to pick up high-priority
+work. Of course, this does <em>not</em> guarantee that high-priority callbacks will
+actually be worked on by the CPU, because the Linux scheduler could decide to
+let some other thread use the CPU instead.</p>
+<h2>Conclusion</h2>
+<p>In fact, this is exactly the topic of the next article. Up until now, we have
+presented the tools (multiple spinners and queues) that ROS provides to
+control how incoming messages and their callbacks are mapped onto OS threads.
+In the next article, we're going to complete the discussion and learn how the
+Linux kernel maps these threads onto physical CPU cores.</p>
+  </div>
+  <div class="article_meta">
+    <p>Posted on: dom 27 ottobre 2019</p>
+    <p>Category: <a href="//nicolovaligi.com/category/2019-10-27-concurrency-and-parallelism-in-ros1-and-ros2-part1.html">2019-10-27-concurrency-and-parallelism-in-ros1-and-ros2-part1</a>
+ &ndash; Tags:
+      <a href="//nicolovaligi.com/tag/robotics.html">robotics</a>,      <a href="//nicolovaligi.com/tag/frameworks.html">frameworks</a>,      <a href="//nicolovaligi.com/tag/ros.html">ROS</a>    </p>
+  </div>
+
+
+</article>
+
+
+    <div id="ending_message">
+      <p>&copy; Nicolò Valigi. Built using <a href="http://getpelican.com" target="_blank">Pelican</a>. Theme originally by Giulio Fidente on <a href="https://github.com/gfidente/pelican-svbhack" target="_blank">github</a>. </p>
+    </div>
+  </main>
+</body>
+</html>
