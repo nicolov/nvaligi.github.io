@@ -1,7 +1,7 @@
-Date: 2019-10-27
-Slug: concurrency-and-parallelism-in-ros1-and-ros2-part-1
-Summary: Concurrency and parallelism in ROS 1 and ROS 2 (part 1)
-Title: Concurrency and parallelism in ROS 1 and ROS 2 (part 1)
+Date: 2019-11-27
+Slug: concurrency-and-parallelism-in-ros1-and-ros2-application-apis
+Summary: Concurrency and parallelism in ROS 1 and ROS 2: application APIs
+Title: Concurrency and parallelism in ROS 1 and ROS 2: application APIs
 Tags: robotics, frameworks, ROS
 
 Many of the ROS stacks I've worked have had trouble with unexpected latency
