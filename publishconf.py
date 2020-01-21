@@ -14,6 +14,7 @@ from pelicanconf import *
 SITEURL = "//nicolovaligi.com"
 RELATIVE_URLS = False
 
+FEED_DOMAIN = "https:" + SITEURL
 FEED_ALL_ATOM = 'feeds/all.atom.xml'
 
 DELETE_OUTPUT_DIRECTORY = True
