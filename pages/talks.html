@@ -109,6 +109,32 @@ Talks -
 <h3>2019</h3>
 <hr>
 <h3 style="margin-bottom: -0.5em">
+        Building self-driving cars with Bazel
+</h3>
+<p><i>Bazel conference 2019</i>   <a href="https://youtu.be/fjfFe98LTm8">Video</a></p>
+<p>A whirlwind tour of how Cruise takes advantage of Bazel for speedy builds of
+its large C++ and Python codebase. Also has the story of our initial migration,
+including exclusive footage of a server under my desk.</p>
+<!-- -->
+<h3 style="margin-bottom: -0.5em">
+        TBB Data Flow graphs in Robotics
+</h3>
+<p><i>Italian C++ Day 2019</i>   <a href="//nicolovaligi.com/pages/talks/2019-11-30-tbb-data-flow-robotics.pdf" target="_blank">
+    Slides
+</a></p>
+<p>Many C++ developers are familiar with the parallel algorithms and data
+structures from the Intel TBB library. TBB also has a Data Flow graph library
+that is less well known but equally interesting. Dataflow programs are
+described as a computational graph, a series of nodes that share data through
+messages flowing through graph edges. The TBB runtime takes care of scheduling
+and running computations with maximum concurrency while respecting the
+dependency information expressed in the graph. This declarative approach to
+task orchestration is especially suitable for pipeline of CPU-heavy tasks, like
+Computer Vision and Robotics. The talk will include an example from these
+domains, complete with a performance evaluation and a comparison with more
+manual implementations.</p>
+<!-- -->
+<h3 style="margin-bottom: -0.5em">
         Concurrency in ROS 1 and 2: from AsyncSpinner to MultithreadedExecutor
 </h3>
 <p><i>ROS Conference 2019</i>   <a href="https://vimeo.com/379127709">Video</a>   <a href="https://roscon.ros.org/2019/talks/roscon2019_concurrency.pdf">Slides</a></p>
