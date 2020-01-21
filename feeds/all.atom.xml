@@ -1,5 +1,125 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Nicolò Valigi</title><link href="//nicolovaligi.com/" rel="alternate"></link><link href="//nicolovaligi.com/feeds/all.atom.xml" rel="self"></link><id>//nicolovaligi.com/</id><updated>2019-10-27T00:00:00+02:00</updated><entry><title>Concurrency and parallelism in ROS 1 and ROS 2 (part 1)</title><link href="//nicolovaligi.com/concurrency-and-parallelism-in-ros1-and-ros2-part-1.html" rel="alternate"></link><published>2019-10-27T00:00:00+02:00</published><updated>2019-10-27T00:00:00+02:00</updated><author><name>Nicolò Valigi</name></author><id>tag:nicolovaligi.com,2019-10-27:concurrency-and-parallelism-in-ros1-and-ros2-part-1.html</id><summary type="html">&lt;p&gt;Many of the ROS stacks I've worked have had trouble with unexpected latency
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Nicolò Valigi</title><link href="//nicolovaligi.com/" rel="alternate"></link><link href="https://nicolovaligi.com/feeds/all.atom.xml" rel="self"></link><id>//nicolovaligi.com/</id><updated>2019-12-02T00:00:00+01:00</updated><entry><title>Concurrency and parallelism in ROS 1 and ROS 2: Linux kernel tools</title><link href="//nicolovaligi.com/concurrency-and-parallelism-in-ros1-and-ros2-linux-kernel-tools.html" rel="alternate"></link><published>2019-12-02T00:00:00+01:00</published><updated>2019-12-02T00:00:00+01:00</updated><author><name>Nicolò Valigi</name></author><id>tag:nicolovaligi.com,2019-12-02:concurrency-and-parallelism-in-ros1-and-ros2-linux-kernel-tools.html</id><summary type="html">&lt;p&gt;This is the second (and last) article in a series that tries to give developers
+the right knowledge to tackle performance (especially latency) problems with
+ROS. The &lt;a href="//nicolovaligi.com/concurrency-and-parallelism-in-ros1-and-ros2-application-apis.html"&gt;first
+article&lt;/a&gt;
+covered the journey from the ROS API to Linux threads. This article will
+complete the quest by introducing how these threads are mapped to Linux threads.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;This article is partially based on my presentation at ROSCon 2019.&lt;/em&gt;&lt;/p&gt;
+&lt;h2&gt;The toolbox&lt;/h2&gt;
+&lt;p&gt;As we've seen in the previous article, the ROS API offers &lt;code&gt;CallbackQueue&lt;/code&gt;s and
+&lt;code&gt;Spinner&lt;/code&gt;s to control how specific callbacks and topics are mapped onto OS
+threads. The next step is to control how these threads are mapped to CPU cores.
+That's the job of the OS scheduler, which keeps a list of active threads
+waiting for CPU time, and multiplexes them on invidual CPU cores.&lt;/p&gt;
+&lt;p&gt;Since resuming, swapping, or pausing a thread incurs quite a bit of latency,
+the choices made by the OS scheduler have a big impact on the overall
+performance of the system. The best option is just to avoid the problem
+altogether. As long the stack doesn't spawn more threads than there are CPU
+cores, the job of the scheduler is easy. Since &lt;em&gt;one thread = one CPU core&lt;/em&gt;,
+application-level APIs (eg. spinners) are enough to give the developer full
+control over the CPU.&lt;/p&gt;
+&lt;p&gt;However, I've never seen a ROS stack that manages to achieve this goal. In ROS
+1, even the simplest C++ node spawns at least 5 threads. Granted, most of them
+are IO-bound (for example waiting on network sockets), but that's still quite a
+lot of threads for the kernel to manage. This means that we'll need to introduce
+OS-level tools to control how threads are mapped onto CPU cores.&lt;/p&gt;
+&lt;p&gt;The next sections will introduce the 4 most commonly used tools to achieve this
+goal:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;thread priorities&lt;/li&gt;
+&lt;li&gt;the deadline scheduler&lt;/li&gt;
+&lt;li&gt;a kernel with real-time (&lt;code&gt;PREEMPT_RT&lt;/code&gt;) patches&lt;/li&gt;
+&lt;li&gt;CPU affinities and &lt;code&gt;cpuset&lt;/code&gt;s&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Thread priorities&lt;/h2&gt;
+&lt;p&gt;Assigning thread priorities is the most intuitive and widely known tool to
+control scheduling. Threads with higher priority &lt;em&gt;tend to&lt;/em&gt; get more CPU time
+over time (we'll see more about this later). Priorities can be set with the
+&lt;code&gt;nice&lt;/code&gt; command line tool or the &lt;code&gt;setpriority(2)&lt;/code&gt; syscall.&lt;/p&gt;
+&lt;p&gt;While priorities are useful for workstations and servers, they're not sufficient
+for robotics applications. The default scheduling algorithm in Linux
+(&lt;code&gt;SCHED_OTHER&lt;/code&gt;) is based on time-sharing, and therefore allows a low
+priority thread to steal CPU time away from an higher priority one as long
+as the overall allocation of CPU time is consistent with the priorities.&lt;/p&gt;
+&lt;p&gt;This is obviously undesiderable in Robotics systems, where high-priority
+operations are often critical for safety. Luckily, Linux offers other scheduling
+policies that offer more control to the developer.&lt;/p&gt;
+&lt;h2&gt;The deadline scheduler&lt;/h2&gt;
+&lt;p&gt;The deadline scheduler (&lt;code&gt;SCHED_DEADLINE&lt;/code&gt;) is an alternative scheduler that
+individual threads can opt in to. Deadline-scheduled threads inform the kernel
+that they require &lt;code&gt;n&lt;/code&gt; microseconds of CPU time every time period of &lt;code&gt;m&lt;/code&gt;
+milliseconds. After running a schedulability check to ensure that all
+deadline-scheduled threads can co-exist on the machine, the scheduler
+guarantees that each task will receive its time slice. Deadline scheduled tasks
+have priority over all others in the system, and are guaranteed not to
+interfere with each other (ie, they're preempted when they exceed their time
+allocation).&lt;/p&gt;
+&lt;p&gt;For reference, it's actually fairly straightfoward for a task to opt in to the
+deadline scheduling class. Here, the task declares that it needs 10
+milliseconds of CPU time every 30 milliseconds. Depending on the system
+configuration, these calls might need root-level permissions.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="k"&gt;struct&lt;/span&gt; &lt;span class="n"&gt;sched_attr&lt;/span&gt; &lt;span class="n"&gt;attr&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+
+&lt;span class="n"&gt;attr&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;size&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;sizeof&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;attr&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="n"&gt;attr&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sched_flags&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="n"&gt;attr&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sched_nice&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="n"&gt;attr&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sched_priority&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+
+&lt;span class="cm"&gt;/* This creates a 10ms/30ms reservation */&lt;/span&gt;
+&lt;span class="n"&gt;attr&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sched_policy&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;SCHED_DEADLINE&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="n"&gt;attr&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sched_runtime&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mi"&gt;1000&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mi"&gt;1000&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="n"&gt;attr&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sched_period&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;attr&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sched_deadline&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;30&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mi"&gt;1000&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mi"&gt;1000&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+
+&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;ret&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;sched_setattr&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&lt;/span&gt;&lt;span class="n"&gt;attr&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;flags&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;h2&gt;Real-time capable kernel&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;SCHED_DEADLINE&lt;/code&gt; is an improvement over the deadline scheduler in terms of
+latency, but there's still a problem. The kernel itself is still allowed to
+interrupt user tasks when it needs to run housekeeping chores and service
+syscalls. As shown in the following figure (from &lt;sup id="fnref:1"&gt;&lt;a class="footnote-ref" href="#fn:1" rel="footnote"&gt;1&lt;/a&gt;&lt;/sup&gt;), this means that user
+tasks can suffer from unbounded latency (purple line) when the kernel suspends
+them to complete long-running tasks in kernel mode.&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Latency distribution with RT and non RT kernels" src="//nicolovaligi.com/rt-kernel.png"/&gt;&lt;/p&gt;
+&lt;p&gt;This issue is somehow alleviated by the &lt;code&gt;PREEMPT_RT&lt;/code&gt; set of patches to the Linux
+kernel (green line in the figure). By making more kernel operations
+interruptible and scheduling them alongside user tasks, these changes provide an
+upper bound for latency (the tails of the latency distribution die off). A
+&lt;code&gt;PREEMPT_RT&lt;/code&gt; kernel trades these improved latency guarantees for a decrease in
+throughput because of the increased synchronization overhead.&lt;/p&gt;
+&lt;h2&gt;CPU core affinity and cpusets&lt;/h2&gt;
+&lt;p&gt;The previous 3 sections covered tools to control how the OS scheduler decides
+which tasks to select for execution at any given time. On a multicore CPU (which
+is most of the CPUs today, even on robots), the missing piece of the puzzle is
+choosing which of the CPU cores should execute a certain task. This decision can
+have a big impact on performance because modern CPUs rely strongly on large
+caches for performance. Swapping a task from one core to another invalidates
+these caches and therefore makes code run substantially lower.&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;sched_setaffinity&lt;/code&gt; family of syscalls and the &lt;code&gt;cpuset&lt;/code&gt; machinery in the
+kernel are the two main knobs that can be used to tweak the allocation
+heuristics in the kernel. Besides an increase in throughput, this also helps
+limit interference between different components of the stack.&lt;/p&gt;
+&lt;h1&gt;Wrapping up&lt;/h1&gt;
+&lt;p&gt;This completes the journey from the ROS interface down to execution on CPU
+cores. The &lt;a href="//nicolovaligi.com/concurrency-and-parallelism-in-ros1-and-ros2-application-apis.html"&gt;first
+article&lt;/a&gt;
+covered ROS-level APIs to control how subscriptions are mapped onto Linux
+threads. This article took it all the way to the hardware by presenting the most
+important knobs in the Linux kernel.&lt;/p&gt;
+&lt;p&gt;While our coverage of these extensive topics could never be extensive, hopefully
+these pointers will be a good starting point for Roboticists struggling with
+performance issues on their robots.&lt;/p&gt;
+&lt;h3&gt;References&lt;/h3&gt;
+&lt;div class="footnote"&gt;
+&lt;hr/&gt;
+&lt;ol&gt;
+&lt;li id="fn:1"&gt;
+&lt;p&gt;Carlos San Vicente Gutiérrez, Lander Usategui San Juan, Irati Zamalloa
+  Ugarte, Víctor Mayoral Vilches, &lt;em&gt;Real-time Linux communications: an evaluation
+  of the Linux communication stack for real-time robotic applications&lt;/em&gt; &lt;a class="footnote-backref" href="#fnref:1" rev="footnote" title="Jump back to footnote 1 in the text"&gt;↩&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;</summary><category term="robotics"></category><category term="frameworks"></category><category term="ROS"></category></entry><entry><title>Concurrency and parallelism in ROS 1 and ROS 2: application APIs</title><link href="//nicolovaligi.com/concurrency-and-parallelism-in-ros1-and-ros2-application-apis.html" rel="alternate"></link><published>2019-11-27T00:00:00+01:00</published><updated>2019-11-27T00:00:00+01:00</updated><author><name>Nicolò Valigi</name></author><id>tag:nicolovaligi.com,2019-11-27:concurrency-and-parallelism-in-ros1-and-ros2-application-apis.html</id><summary type="html">&lt;p&gt;Many of the ROS stacks I've worked have had trouble with unexpected latency
 and jitter. These performance issues are often caused by the peculiar way in
 which the framework manages concurrency and parallelism. This article
 discusses the basics of concurrency in ROS 1 and 2, and how to use their APIs
