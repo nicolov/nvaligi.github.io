@@ -122,7 +122,7 @@ policies corrupts the policy gradient (_policy lag_). IMPALA uses a novel
 importance sampling algorithm (_V-trace_) to work around this problem without
 throwing away samples.
 
-<img src="{attach}graphics-3.svg"
+<img src="{attach}graphics-4.svg"
      style="max-width: 80%; transform: scale(1);"
      class="img-center" />
 
