@@ -90,7 +90,7 @@ experience.  In other words, experience collected by workers under out-of-date
 policies corrupts the policy gradient (&lt;em&gt;policy lag&lt;/em&gt;). IMPALA uses a novel
 importance sampling algorithm (&lt;em&gt;V-trace&lt;/em&gt;) to work around this problem without
 throwing away samples.&lt;/p&gt;
-&lt;p&gt;&lt;img class="img-center" src="//nicolovaligi.com/graphics-3.svg" style="max-width: 80%; transform: scale(1);"/&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img class="img-center" src="//nicolovaligi.com/graphics-4.svg" style="max-width: 80%; transform: scale(1);"/&gt;&lt;/p&gt;
 &lt;p&gt;Another success story of large-scale RL based on Actor-Critic methods was
 reported by OpenAI when their &lt;strong&gt;OpenAI Five&lt;/strong&gt; agent defeated the Dota 2 world
 champions. &lt;a href='#openai2019dota' id='ref-openai2019dota-1'&gt;OpenAI et al. (2019)&lt;/a&gt; Like IMPALA, actors submit samples to
@@ -264,7 +264,7 @@ article&lt;/a&gt;
 covered ROS-level APIs to control how subscriptions are mapped onto Linux
 threads. This article took it all the way to the hardware by presenting the most
 important knobs in the Linux kernel.&lt;/p&gt;
-&lt;p&gt;While our coverage of these extensive topics could never be extensive, hopefully
+&lt;p&gt;While our coverage of these complex topics could never be extensive, hopefully
 these pointers will be a good starting point for Roboticists struggling with
 performance issues on their robots.&lt;/p&gt;
 &lt;h3&gt;References&lt;/h3&gt;
