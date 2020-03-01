@@ -122,7 +122,6 @@
 </g>
 </defs>
 <g id="surface1">
-<rect x="0" y="0" width="429" height="216" style="fill:rgb(100%,100%,100%);fill-opacity:1;stroke:none;"/>
 <path style="fill-rule:nonzero;fill:rgb(83.921814%,83.529663%,83.529663%);fill-opacity:1;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:4;" d="M -0.0008625 -0.00173125 L 121.9132 -0.00173125 L 121.9132 78.123269 L -0.0008625 78.123269 Z M -0.0008625 -0.00173125 " transform="matrix(1,0,0,1,21.7743,1.1697)"/>
 <path style="fill-rule:nonzero;fill:rgb(83.921814%,83.529663%,83.529663%);fill-opacity:1;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:4;" d="M -0.0012 0.00015625 L 121.912863 0.00015625 L 121.912863 78.125156 L -0.0012 78.125156 Z M -0.0012 0.00015625 " transform="matrix(1,0,0,1,11.3137,12.785)"/>
 <path style="fill-rule:nonzero;fill:rgb(83.921814%,83.529663%,83.529663%);fill-opacity:1;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:4;" d="M -0.00103125 0 L 121.913031 0 L 121.913031 78.125 L -0.00103125 78.125 Z M -0.00103125 0 " transform="matrix(1,0,0,1,1.544,22.9375)"/>
